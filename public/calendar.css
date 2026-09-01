@@ -1,0 +1,804 @@
+/* =========================================================
+   CALENDAR PAGE — calendar.css
+   ========================================================= */
+
+
+/* ── Layout ─────────────────────────────────────────────── */
+
+.cal-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 20px;
+    align-items: start;
+    margin-bottom: 20px;
+}
+
+.cal-main {
+    min-width: 0;
+}
+
+.cal-side {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.cal-panel {
+    overflow: hidden;
+}
+
+
+/* ── Calendar header ─────────────────────────────────────── */
+
+.cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #f1f3f6;
+}
+
+.cal-title {
+    text-align: center;
+}
+
+.cal-title h2 {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text);
+}
+
+.cal-title span {
+    font-size: 11px;
+    color: var(--text-light);
+}
+
+.cal-nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: var(--background);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: 0.18s ease;
+    line-height: 1;
+}
+
+.cal-nav-btn:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+
+/* ── Day labels ──────────────────────────────────────────── */
+
+.cal-day-labels {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: #fafbfc;
+    border-bottom: 1px solid var(--border);
+}
+
+.cal-day-label {
+    text-align: center;
+    padding: 10px 0;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-light);
+    letter-spacing: 0.5px;
+}
+
+
+/* ── Calendar grid ───────────────────────────────────────── */
+
+.cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-left: 1px solid #f1f3f6;
+}
+
+.cal-cell {
+    min-height: 100px;
+    border-right: 1px solid #f1f3f6;
+    border-bottom: 1px solid #f1f3f6;
+    padding: 8px 6px 6px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.cal-cell:hover:not(.cal-cell--empty) {
+    background: #f8faff;
+}
+
+.cal-cell--empty {
+    background: #fafbfc;
+    cursor: default;
+}
+
+.cal-cell--today .cal-day-num {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35);
+}
+
+.cal-cell--past {
+    background: #f1f3f5;
+    color: #9ca3af;
+}
+
+.cal-cell--past .cal-day-num {
+    color: #9ca3af;
+}
+
+.cal-cell--past:hover:not(.cal-cell--empty) {
+    background: #e5e7eb;
+}
+
+.cal-cell--has-events {
+    background: #fefeff;
+}
+
+.cal-day-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text);
+    flex-shrink: 0;
+    transition: 0.15s;
+}
+
+.cal-cell:hover:not(.cal-cell--empty) .cal-day-num:not(.today-num) {
+    background: #eff6ff;
+    color: var(--primary);
+}
+
+
+/* ── Events inside cells ─────────────────────────────────── */
+
+.cal-events {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 2px;
+    overflow: hidden;
+}
+
+.cal-event {
+    font-size: 9px;
+    font-weight: 600;
+    padding: 2px 5px;
+    border-radius: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+}
+
+.ev-completed {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.ev-progress {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.ev-pending {
+    background: #fef9c3;
+    color: #a16207;
+}
+
+.ev-overdue {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.ev-appt {
+    background: #f3e8ff;
+    color: #7c3aed;
+}
+
+.ev-more {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+
+/* ── Legend ──────────────────────────────────────────────── */
+
+.cal-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px 20px;
+    border-top: 1px solid #f1f3f6;
+    background: #fafbfc;
+}
+
+.leg-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 9px;
+    color: var(--text-light);
+    font-weight: 500;
+}
+
+.leg-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 3px;
+}
+
+
+/* ── Upcoming Events ─────────────────────────────────────── */
+
+.upcoming-list {
+    padding: 8px 0 6px;
+}
+
+.upcoming-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background 0.15s;
+}
+
+.upcoming-item:last-child {
+    border-bottom: none;
+}
+
+.upcoming-item:hover {
+    background: #f8faff;
+}
+
+.upcoming-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.ev-icon-task {
+    background: #eff6ff;
+    color: var(--primary);
+}
+
+.ev-icon-appt {
+    background: #f3e8ff;
+    color: #7c3aed;
+}
+
+.upcoming-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.upcoming-info strong {
+    display: block;
+    font-size: 10px;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.upcoming-info span {
+    display: block;
+    font-size: 8px;
+    color: var(--text-light);
+    margin-top: 2px;
+}
+
+.upcoming-info small {
+    display: block;
+    font-size: 8px;
+    color: #9ca3af;
+    margin-top: 2px;
+}
+
+.up-badge {
+    font-size: 8px;
+    font-weight: 600;
+    padding: 3px 6px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.up-badge--completed    { background: #dcfce7; color: #15803d; }
+.up-badge--inprogress   { background: #dbeafe; color: #1d4ed8; }
+.up-badge--pending      { background: #fef9c3; color: #a16207; }
+.up-badge--overdue      { background: #fee2e2; color: #b91c1c; }
+.up-badge--appt         { background: #f3e8ff; color: #7c3aed; }
+
+.upcoming-empty {
+    text-align: center;
+    padding: 24px 18px;
+    color: var(--text-light);
+}
+
+.upcoming-empty span {
+    font-size: 28px;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.upcoming-empty p {
+    font-size: 11px;
+}
+
+
+/* ── Appointment Form ────────────────────────────────────── */
+
+.cal-form-body {
+    padding: 16px 20px 20px;
+}
+
+.form-group {
+    margin-bottom: 14px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 5px;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 11px;
+    font-family: inherit;
+    color: var(--text);
+    background: white;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 70px;
+}
+
+.book-btn {
+    width: 100%;
+    padding: 11px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 9px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: inherit;
+    cursor: pointer;
+    transition: 0.2s ease;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.book-btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+}
+
+.form-msg {
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 600;
+    margin-bottom: 14px;
+}
+
+.form-msg--success {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+}
+
+.form-msg--error {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+.booking-identity {
+    margin: 0 0 14px;
+    padding: 9px 11px;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    color: var(--text-light);
+    font-size: 11px;
+}
+
+.google-tools {
+    display: grid;
+    gap: 5px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    font-size: 10px;
+    line-height: 1.4;
+}
+
+.google-tools strong { font-size: 11px; }
+.google-tools span { color: var(--text-light); }
+.google-tools a,
+.google-calendar-link { color: var(--primary); font-weight: 600; text-decoration: none; }
+.google-tools a:hover,
+.google-calendar-link:hover { text-decoration: underline; }
+
+
+/* ── Month Summary ───────────────────────────────────────── */
+
+.month-summary {
+    padding: 14px 20px 18px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.summary-stat {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fafbfc;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 12px;
+}
+
+.summary-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.summary-icon.green  { background: #dcfce7; color: #15803d; }
+.summary-icon.blue   { background: #dbeafe; color: #1d4ed8; }
+.summary-icon.orange { background: #fef9c3; color: #a16207; }
+.summary-icon.red    { background: #fee2e2; color: #b91c1c; }
+.summary-icon.purple { background: #f3e8ff; color: #7c3aed; }
+
+.summary-stat strong {
+    display: block;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1;
+}
+
+.summary-stat span {
+    display: block;
+    font-size: 9px;
+    color: var(--text-light);
+    margin-top: 2px;
+}
+
+
+/* ── Day Detail Modal ────────────────────────────────────── */
+
+.cal-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(3px);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.cal-modal-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.cal-modal {
+    background: white;
+    border-radius: 16px;
+    width: 420px;
+    max-width: 92vw;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.2);
+    transform: scale(0.92) translateY(10px);
+    transition: transform 0.22s ease;
+}
+
+.cal-modal-overlay.active .cal-modal {
+    transform: scale(1) translateY(0);
+}
+
+.cal-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 22px 16px;
+    border-bottom: 1px solid #f1f3f6;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 1;
+    border-radius: 16px 16px 0 0;
+}
+
+.cal-modal-header h3 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.cal-modal-close {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: white;
+    color: var(--text-light);
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.15s;
+}
+
+.cal-modal-close:hover {
+    background: #fef2f2;
+    color: var(--red);
+    border-color: #fecaca;
+}
+
+.cal-modal-body {
+    padding: 16px 20px 20px;
+}
+
+.modal-section-title {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--text-light);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+
+.modal-event-card {
+    background: #fafbfc;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+}
+
+.modal-appt-card {
+    background: #faf5ff;
+    border-color: #e9d5ff;
+}
+
+.modal-event-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.modal-ev-badge {
+    font-size: 8px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 20px;
+}
+
+.modal-ev-progress {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-light);
+}
+
+.modal-ev-name {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 5px;
+    line-height: 1.3;
+}
+
+.modal-ev-meta {
+    display: flex;
+    gap: 10px;
+    font-size: 9px;
+    color: var(--text-light);
+    margin-bottom: 8px;
+}
+
+.modal-ev-bar {
+    height: 4px;
+    background: #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.modal-ev-bar-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.5s ease;
+}
+
+.modal-ev-bar-fill.ev-completed { background: #16a34a; }
+.modal-ev-bar-fill.ev-progress  { background: var(--primary); }
+.modal-ev-bar-fill.ev-pending   { background: #f59e0b; }
+.modal-ev-bar-fill.ev-overdue   { background: #dc2626; }
+
+
+/* ── Responsive ──────────────────────────────────────────── */
+
+@media (max-width: 1100px) {
+    .cal-layout {
+        grid-template-columns: 1fr;
+    }
+    .cal-side {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 700px) {
+    .cal-side {
+        grid-template-columns: 1fr;
+    }
+    .cal-cell {
+        min-height: 60px;
+        padding: 4px 3px;
+    }
+    .cal-event {
+        display: none;
+    }
+    .cal-cell--has-events::after {
+        content: '';
+        display: block;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--primary);
+        margin: 2px auto 0;
+    }
+    .month-summary {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── Booked Cells & Table Action Buttons ─────────────────── */
+
+.cal-cell--booked {
+    background: #fff5f5 !important;
+}
+.cal-cell--booked:hover {
+    background: #fee2e2 !important;
+}
+.cal-cell--booked::before {
+    content: "🔒 Booked";
+    position: absolute;
+    bottom: 6px;
+    right: 8px;
+    font-size: 8px;
+    font-weight: 700;
+    color: #ef4444;
+    background: #fee2e2;
+    padding: 2px 5px;
+    border-radius: 4px;
+}
+.cal-cell--accepted {
+    background: #f0fdf4 !important;
+}
+.cal-cell--accepted:hover {
+    background: #dcfce7 !important;
+}
+.cal-cell--accepted::before {
+    content: "Accepted";
+    position: absolute;
+    bottom: 6px;
+    right: 8px;
+    font-size: 8px;
+    font-weight: 700;
+    color: #15803d;
+    background: #dcfce7;
+    padding: 2px 5px;
+    border-radius: 4px;
+}
+
+.tbl-action-btn {
+    border: none;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.15s ease;
+}
+.tbl-btn-accept {
+    background: #dcfce7;
+    color: #15803d;
+}
+.tbl-btn-accept:hover {
+    background: #bbf7d0;
+    transform: translateY(-1px);
+}
+.tbl-btn-reject {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+.tbl-btn-reject:hover {
+    background: #fecaca;
+    transform: translateY(-1px);
+}
+.modal-booked-alert {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 600;
+    margin-top: 14px;
+}
+.modal-appt-rejected {
+    background: #fef2f2;
+    border-color: #fca5a5;
+}
+.modal-ev-comment {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed #fca5a5;
+    font-size: 9px;
+    color: #b91c1c;
+    line-height: 1.3;
+}
+

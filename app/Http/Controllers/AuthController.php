@@ -1,0 +1,69 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\FaeUser;
+use App\Services\MonitoringAuth;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Session;
+
+class AuthController extends Controller
+{
+    public function showAccess(Request $request)
+    {
+        $error = $request->query('err', '');
+        return view('access', compact('error'));
+    }
+
+    public function login(Request $request)
+    {
+        $accessType = $request->input('access_type');
+
+        if ($accessType === 'admin') {
+            $adminKey = (string)$request->input('admin_key', '');
+            if (hash_equals(MonitoringAuth::adminKey(), $adminKey)) {
+                Session::put('monitoring_role', 'admin');
+                Session::forget(['monitoring_fae_id', 'monitoring_fae_name', 'monitoring_fae_code']);
+                return redirect()->route('dashboard');
+            }
+            return back()->with('error', 'The admin access key is not valid.');
+        }
+
+        if ($accessType === 'fae') {
+            $faeCode = strtoupper(trim((string)$request->input('fae_code', '')));
+            $fae = FaeUser::where('fae_code', $faeCode)->first();
+            if ($fae) {
+                Session::put('monitoring_role', 'fae');
+                Session::put('monitoring_fae_id', (int)$fae->id);
+                Session::put('monitoring_fae_name', $fae->name);
+                Session::put('monitoring_fae_code', $fae->fae_code);
+                return redirect()->route('dashboard');
+            }
+            return back()->with('error', 'That FAE code was not found.');
+        }
+
+        return back()->with('error', 'Invalid workspace selection.');
+    }
+
+    public function directFaeLink(string $code)
+    {
+        $faeCode = strtoupper(trim($code));
+        $fae = FaeUser::where('fae_code', $faeCode)->first();
+        if (!$fae) {
+            return redirect()->route('access')->with('error', 'This FAE link is invalid or no longer active.');
+        }
+
+        Session::put('monitoring_role', 'fae');
+        Session::put('monitoring_fae_id', (int)$fae->id);
+        Session::put('monitoring_fae_name', $fae->name);
+        Session::put('monitoring_fae_code', $fae->fae_code);
+
+        return redirect()->route('dashboard');
+    }
+
+    public function logout()
+    {
+        Session::flush();
+        return redirect()->route('access');
+    }
+}
