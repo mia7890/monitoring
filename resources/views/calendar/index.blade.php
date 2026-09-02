@@ -225,10 +225,9 @@
 
                 <div class="google-tools">
                     <strong>Google Workspace</strong>
-                    <span>Sync appointments and task deadlines directly to Google Calendar, or open your team's Google Drive storage workspace.</span>
+                    <span>Sync appointments and task deadlines directly to Google Calendar.</span>
                     <div style="display:flex; gap:6px; margin-top:8px;">
                         <a href="https://calendar.google.com" target="_blank" rel="noopener" class="google-calendar-link">Google Calendar</a>
-                        <a href="{{ env('GOOGLE_DRIVE_FOLDER_URL', 'https://drive.google.com/drive/my-drive') }}" target="_blank" rel="noopener" class="google-drive-link">Google Drive</a>
                     </div>
                 </div>
             </div>
@@ -537,6 +536,11 @@ document.querySelectorAll(".btn-trigger-reject").forEach(function(btn) {
 // Click cell to open appointment modal or event details
 document.querySelectorAll(".cal-cell:not(.cal-cell--empty)").forEach(function(cell) {
     cell.addEventListener("click", function(e) {
+        // Prevent clicking on previous/past dates
+        if (this.classList.contains('cal-cell--past')) {
+            return;
+        }
+
         var dateStr = this.getAttribute("data-date");
         var dayNum = parseInt(this.getAttribute("data-day"), 10);
 

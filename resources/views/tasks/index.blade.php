@@ -123,9 +123,13 @@
                             data-priority="{{ $priority }}">
                             <td>
                                 <div class="user-cell">
-                                    <div class="small-avatar" style="background: {{ $avatarCol }}; color:white;">
-                                        {{ $faeInitials }}
-                                    </div>
+                                    @if($row->fae && $row->fae->profile_image)
+                                        <img src="{{ asset($row->fae->profile_image) }}" alt="{{ $row->fae->name }}" class="small-avatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                                    @else
+                                        <div class="small-avatar" style="background: {{ $avatarCol }}; color:white;">
+                                            {{ $faeInitials }}
+                                        </div>
+                                    @endif
                                     <div>
                                         <strong>{{ $row->fae->name ?? 'Unassigned' }}</strong>
                                         <span>{{ $row->fae->fae_code ?? 'None' }}</span>
@@ -690,9 +694,9 @@
 
     function formatDate(dateStr) {
         if (!dateStr) return '';
-        const d = new Date(dateStr.replace(/-/g, '/'));
+        const d = new Date(dateStr);
         if (isNaN(d.getTime())) return dateStr;
-        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
     }
 
     // AJAX Timeline Loader
@@ -760,27 +764,34 @@
                         let html = '';
                         updates.forEach(u => {
                             const isAdminAuthor = u.author_role === 'admin';
-                            const authorBadgeClass = isAdminAuthor ? 'author-badge-admin' : 'author-badge-fae';
-                            const itemBorderClass = isAdminAuthor ? 'timeline-admin' : 'timeline-fae';
+                            const authorBadge = isAdminAuthor ? 'Supervisor' : 'FAE';
+                            const badgeColor = isAdminAuthor ? '#ef4444' : '#3b82f6';
+                            const backgroundColor = isAdminAuthor ? 'rgba(239,68,68,0.05)' : 'rgba(59,130,246,0.05)';
+                            const borderColor = isAdminAuthor ? '#fca5a5' : '#93c5fd';
 
-                            html += '<div class="timeline-item ' + itemBorderClass + '">' +
-                                        '<div class="timeline-header">' +
-                                            '<div style="display:flex; align-items:center; gap:6px;">' +
-                                                '<strong>' + escapeHtml(u.author_name) + '</strong>' +
-                                                '<span class="author-badge ' + authorBadgeClass + '">' + (isAdminAuthor ? 'Supervisor' : 'FAE') + '</span>' +
-                                            '</div>' +
-                                            '<span class="timeline-time">' + formatDate(u.created_at) + '</span>' +
+                            html += '<div style="background:' + backgroundColor + '; border:1px solid ' + borderColor + '; border-radius:8px; padding:12px; margin-bottom:12px; transition:all 0.2s ease;">' +
+                                        '<div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">' +
+                                            '<strong style="font-size:13px; color:var(--text);">' + escapeHtml(u.author_name) + '</strong>' +
+                                            '<span style="background:' + badgeColor + '; color:white; font-size:9px; font-weight:700; padding:3px 8px; border-radius:4px;">' + authorBadge + '</span>' +
                                         '</div>' +
-                                        '<div class="timeline-body">' +
-                                            '<p>' + escapeHtml(u.message).replace(/\n/g, '<br>') + '</p>';
+                                        '<div style="font-size:11px; color:var(--text); line-height:1.5; margin-bottom:10px;">' +
+                                            '<span style="color:var(--text-light); font-weight:600;">Message:</span><br>' +
+                                            '<p style="margin:4px 0 0 0; color:var(--text);">' + escapeHtml(u.message).replace(/\n/g, '<br>') + '</p>' +
+                                        '</div>';
+
+                            html += '<div style="display:flex; align-items:center; gap:12px; font-size:9px; color:var(--text-light); margin-bottom:10px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.05);">' +
+                                        '<span><strong>Date:</strong> ' + formatDate(u.created_at) + '</span>' +
+                                    '</div>';
 
                             if (u.progress_at_update !== null || u.status_at_update) {
-                                html += '<div class="timeline-metrics">';
+                                html += '<div style="display:flex; gap:12px; font-size:10px; flex-wrap:wrap;">';
                                 if (u.progress_at_update !== null) {
-                                    html += '<span>Progress: <strong>' + parseInt(u.progress_at_update) + '%</strong></span>';
+                                    html += '<span style="background:rgba(34,197,94,0.1); color:#16a34a; padding:4px 8px; border-radius:4px; font-weight:600;"><strong>Progress:</strong> ' + parseInt(u.progress_at_update) + '%</span>';
                                 }
                                 if (u.status_at_update) {
-                                    html += '<span>Status: <strong>' + escapeHtml(u.status_at_update) + '</strong></span>';
+                                    const statusColor = u.status_at_update === 'Completed' ? '#16a34a' : (u.status_at_update === 'Overdue' ? '#dc2626' : '#f59e0b');
+                                    const statusBg = u.status_at_update === 'Completed' ? 'rgba(22,163,74,0.1)' : (u.status_at_update === 'Overdue' ? 'rgba(220,38,38,0.1)' : 'rgba(245,158,11,0.1)');
+                                    html += '<span style="background:' + statusBg + '; color:' + statusColor + '; padding:4px 8px; border-radius:4px; font-weight:600;"><strong>Status:</strong> ' + escapeHtml(u.status_at_update) + '</span>';
                                 }
                                 html += '</div>';
                             }
@@ -790,13 +801,13 @@
                                 const isImg = ['jpg','jpeg','png','gif','webp','bmp'].includes(ext);
                                 const assetUrl = '{{ asset("") }}' + u.attachment;
                                 if (isImg) {
-                                    html += '<div class="timeline-attachment"><a href="' + assetUrl + '" target="_blank"><img src="' + assetUrl + '" alt="Attachment preview" style="max-height:120px; border-radius:6px; border:1px solid #ddd; margin-top:6px; display:block;"></a></div>';
+                                    html += '<div style="margin-top:10px;"><a href="' + assetUrl + '" target="_blank"><img src="' + assetUrl + '" alt="Attachment preview" style="max-height:150px; border-radius:6px; border:1px solid #ddd; display:block;"></a></div>';
                                 } else {
-                                    html += '<div class="timeline-attachment" style="margin-top:6px;"><a href="' + assetUrl + '" target="_blank" class="outline-button btn-sm" style="display:inline-flex; align-items:center; gap:4px; text-decoration:none;">Download ' + escapeHtml(u.attachment.split('/').pop()) + '</a></div>';
+                                    html += '<div style="margin-top:10px;"><a href="' + assetUrl + '" target="_blank" class="outline-button btn-sm" style="display:inline-flex; align-items:center; gap:4px; text-decoration:none;">Download ' + escapeHtml(u.attachment.split('/').pop()) + '</a></div>';
                                 }
                             }
 
-                            html += '</div></div>';
+                            html += '</div>';
                         });
                         timelineContainer.innerHTML = html;
                     }

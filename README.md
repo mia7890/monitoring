@@ -21,6 +21,10 @@ Laravel is a web application framework with expressive, elegant syntax. We belie
 
 Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
+## Google Drive backups
+
+Create an OAuth 2.0 web client in Google Cloud with the Google Drive API enabled. Add the callback URL `${APP_URL}/google-drive/callback` to its authorized redirect URIs, then set the `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, and `GOOGLE_DRIVE_REDIRECT_URI` values in `.env`. Set `GOOGLE_DRIVE_FOLDER_ID` to send backups to a particular Drive folder, or leave it empty for the Drive root. Run `php artisan migrate`, sign in as an administrator, and use **Drive Backup** to authorize the Google account.
+
 ## Learning Laravel
 
 Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.

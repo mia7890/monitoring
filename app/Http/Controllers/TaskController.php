@@ -9,6 +9,7 @@ use App\Services\MonitoringAuth;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class TaskController extends Controller
 {
@@ -213,7 +214,7 @@ class TaskController extends Controller
             $newStatus = $newProgress >= 100 ? 'Completed' : ($newProgress > 0 ? 'In Progress' : 'Pending');
         }
 
-        TaskUpdate::create([
+        $taskUpdate = TaskUpdate::create([
             'task_id' => $taskId,
             'fae_id' => $isAdmin ? null : $currentFaeId,
             'author_role' => $isAdmin ? 'admin' : 'fae',

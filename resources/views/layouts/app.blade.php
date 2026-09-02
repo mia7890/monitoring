@@ -91,14 +91,6 @@
                 <span>Calendar</span>
             </a>
 
-            <a href="{{ env('GOOGLE_DRIVE_FOLDER_URL', 'https://drive.google.com/drive/my-drive') }}" target="_blank" rel="noopener" class="nav-item" title="Open Google Drive Workspace">
-                <span class="nav-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                </span>
-                <span>Google Drive</span>
-            </a>
         </nav>
 
         <div class="sidebar-bottom">
@@ -146,11 +138,52 @@
                             <span class="notification-empty">No new notifications.</span>
                         @else
                             @foreach(array_slice($notificationItems, 0, 8) as $item)
-                                <div class="notification-item">
-                                    <span style="color:var(--primary); font-size:9px; font-weight:700; text-transform:uppercase;">{{ $item['type'] }}</span>
-                                    <strong style="font-size:11px; line-height:1.35; color:var(--text);">{{ $item['title'] }}</strong>
-                                    @if(!empty($item['date']))
-                                        <small style="color:var(--text-light); font-size:9px;">{{ date('M d, Y', strtotime($item['date'])) }}</small>
+                                @php
+                                    $type = $item['type'];
+                                    $title = $item['title'];
+                                    $date = $item['date'];
+                                    
+                                    // Extract FAE name and description from title
+                                    $faeName = '';
+                                    $description = '';
+                                    
+                                    if ($type === 'FAE Progress Report') {
+                                        // Format: "FAE Name on \"Task Name\": message"
+                                        if (preg_match('/^([^"]+)\s+on\s+"([^"]+)"\:\s*(.*)$/', $title, $matches)) {
+                                            $faeName = trim($matches[1]);
+                                            $description = $matches[3];
+                                        }
+                                    } elseif ($type === 'Admin Remark') {
+                                        // Format: "Admin on \"Task Name\": message"
+                                        if (preg_match('/^Admin\s+on\s+"([^"]+)"\:\s*(.*)$/', $title, $matches)) {
+                                            $faeName = 'Administrator';
+                                            $description = $matches[2];
+                                        }
+                                    } elseif ($type === 'Assigned task' || $type === 'Overdue task') {
+                                        $description = $title;
+                                        $faeName = '';
+                                    } elseif ($type === 'Appointment request') {
+                                        $description = $title;
+                                        $faeName = '';
+                                    }
+                                @endphp
+                                <div style="background: rgba(59,130,246,0.05); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 8px; transition: all 0.2s ease;">
+                                    <div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px;">
+                                        <span style="color: var(--primary); font-size: 8px; font-weight: 700; text-transform: uppercase; background: rgba(59,130,246,0.15); padding: 3px 6px; border-radius: 4px; flex-shrink: 0;">{{ $type }}</span>
+                                        @if(!empty($faeName))
+                                            <span style="color: white; font-size: 10px; font-weight: 700; background: var(--primary); padding: 3px 8px; border-radius: 4px; flex-shrink: 0;">{{ $faeName }}</span>
+                                        @endif
+                                    </div>
+                                    
+                                    @if(!empty($description))
+                                        <p style="margin: 0 0 8px 0; font-size: 11px; color: var(--text); line-height: 1.4;">{{ $description }}</p>
+                                    @endif
+                                    
+                                    @if(!empty($date))
+                                        <div style="display: flex; align-items: center; gap: 4px; font-size: 9px; color: var(--text-light);">
+                                            <span style="font-weight: 600;">Date:</span>
+                                            <span>{{ date('M d, Y • H:i', strtotime($date)) }}</span>
+                                        </div>
                                     @endif
                                 </div>
                             @endforeach

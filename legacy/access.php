@@ -55,7 +55,7 @@ $appBase = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/mon
         <div class="access-mark"><img src="logo.png" alt="Monitoring System logo"></div>
         <p class="welcome-label">MONITORING SYSTEM</p>
         <h1>Choose your workspace</h1>
-        <p class="access-intro">Use the access details provided by your supervisor.</p> 
+        <p class="access-intro">Use the access details provided by your supervisor.</p>
         <?php if ($error): ?>
             <div class="alert-banner error"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
