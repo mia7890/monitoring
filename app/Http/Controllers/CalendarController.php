@@ -4,9 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\AdminEvent;
 use App\Models\Appointment;
-use App\Models\Task;
+use App\Services\CalendarDataBuilder;
 use App\Services\MonitoringAuth;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class CalendarController extends Controller
@@ -19,115 +18,12 @@ class CalendarController extends Controller
         $month = (int)$request->query('month', date('n'));
         $year = (int)$request->query('year', date('Y'));
 
-        if ($month < 1) {
-            $month = 12;
-            $year--;
-        } elseif ($month > 12) {
-            $month = 1;
-            $year++;
-        }
+        $data = array_merge(
+            compact('isAdmin', 'currentFaeId'),
+            CalendarDataBuilder::build($month, $year, $isAdmin ? null : $currentFaeId, 10, true)
+        );
 
-        $prevMonth = $month - 1;
-        $prevYear = $year;
-        if ($prevMonth < 1) {
-            $prevMonth = 12;
-            $prevYear--;
-        }
-
-        $nextMonth = $month + 1;
-        $nextYear = $year;
-        if ($nextMonth > 12) {
-            $nextMonth = 1;
-            $nextYear++;
-        }
-
-        // Fetch task deadlines for this month
-        $taskQuery = Task::with('fae')
-            ->whereMonth('deadline', $month)
-            ->whereYear('deadline', $year);
-
-        if (!$isAdmin && $currentFaeId) {
-            $taskQuery->where('fae_id', $currentFaeId);
-        }
-
-        $monthTasks = $taskQuery->orderBy('deadline', 'asc')->get();
-        $tasksByDay = [];
-        foreach ($monthTasks as $task) {
-            $day = (int)$task->deadline->format('j');
-            $tasksByDay[$day][] = $task;
-        }
-
-        // Fetch appointments for this month
-        $apptQuery = Appointment::with('fae')
-            ->whereMonth('appointment_date', $month)
-            ->whereYear('appointment_date', $year);
-
-        if (!$isAdmin && $currentFaeId) {
-            $apptQuery->where('fae_id', $currentFaeId);
-        }
-
-        $monthAppts = $apptQuery->orderBy('appointment_date', 'asc')->get();
-        $apptsByDay = [];
-        $bookedDays = [];
-
-        foreach ($monthAppts as $appt) {
-            $day = (int)$appt->appointment_date->format('j');
-            $apptsByDay[$day][] = $appt;
-            if (in_array($appt->status, ['pending', 'accepted'], true)) {
-                $bookedDays[$day] = $appt;
-            }
-        }
-
-        // Fetch admin events for this month
-        $adminEvents = AdminEvent::whereMonth('event_date', $month)
-            ->whereYear('event_date', $year)
-            ->orderBy('event_date', 'asc')
-            ->get();
-
-        $adminEventsByDay = [];
-        $busyDays = [];
-
-        foreach ($adminEvents as $evt) {
-            $day = (int)$evt->event_date->format('j');
-            $adminEventsByDay[$day][] = $evt;
-            if ($evt->category === 'busy') {
-                $busyDays[$day] = true;
-                $bookedDays[$day] = (object)['status' => 'busy'];
-            }
-        }
-
-        // Upcoming schedule
-        $upcomingEvents = AdminEvent::where('event_date', '>=', Carbon::today()->format('Y-m-d'))
-            ->orderBy('event_date', 'asc')
-            ->take(10)
-            ->get();
-
-        $upcomingAppointments = Appointment::with('fae')
-            ->where('appointment_date', '>=', Carbon::today()->format('Y-m-d'));
-
-        if (!$isAdmin && $currentFaeId) {
-            $upcomingAppointments->where('fae_id', $currentFaeId);
-        }
-
-        $upcomingApptList = $upcomingAppointments->orderBy('appointment_date', 'asc')->take(10)->get();
-
-        return view('calendar.index', compact(
-            'isAdmin',
-            'currentFaeId',
-            'month',
-            'year',
-            'prevMonth',
-            'prevYear',
-            'nextMonth',
-            'nextYear',
-            'tasksByDay',
-            'apptsByDay',
-            'bookedDays',
-            'adminEventsByDay',
-            'busyDays',
-            'upcomingEvents',
-            'upcomingApptList'
-        ));
+        return view('calendar.index', $data);
     }
 
     public function bookAppointment(Request $request)
@@ -149,11 +45,11 @@ class CalendarController extends Controller
         $userName = MonitoringAuth::faeName();
 
         // Check if date is already booked (pending or accepted)
-        $alreadyBooked = Appointment::where('appointment_date', $apptDate)
+        $alreadyBooked = Appointment::whereDate('appointment_date', $apptDate)
             ->whereIn('status', ['pending', 'accepted'])
             ->exists();
 
-        $adminBusy = AdminEvent::where('event_date', $apptDate)
+        $adminBusy = AdminEvent::whereDate('event_date', $apptDate)
             ->where('category', 'busy')
             ->exists();
 
@@ -194,7 +90,7 @@ class CalendarController extends Controller
             ]);
 
             // Reject other pending requests for the same date
-            Appointment::where('appointment_date', $appt->appointment_date)
+            Appointment::whereDate('appointment_date', $appt->appointment_date)
                 ->where('id', '!=', $appt->id)
                 ->where('status', 'pending')
                 ->update([

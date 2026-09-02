@@ -4,7 +4,7 @@
 @section('breadcrumb', 'Calendar')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('calendar.css') }}?v={{ time() }}">
+<link rel="stylesheet" href="{{ asset_versioned('calendar.css') }}">
 @endpush
 
 @section('content')

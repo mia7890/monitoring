@@ -3,21 +3,23 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\FaeController;
+use App\Http\Controllers\FileController;
+use App\Http\Controllers\LandingController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TaskController;
 use App\Services\MonitoringAuth;
 use Illuminate\Support\Facades\Route;
 
-// Root redirect
-Route::get('/', function () {
-    return MonitoringAuth::role() ? redirect()->route('dashboard') : redirect()->route('access');
-});
+// Public Landing Page with interactive calendar
+Route::get('/', [LandingController::class, 'index'])->name('landing');
 
 // Authentication routes
 Route::get('/access', [AuthController::class, 'showAccess'])->name('access');
-Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::post('/login', [AuthController::class, 'login'])->name('login')->middleware('throttle:monitoring-login');
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
-Route::get('/fae-link/{code}', [AuthController::class, 'directFaeLink'])->name('fae.link');
+Route::get('/fae-link/{code}', [AuthController::class, 'directFaeLink'])->name('fae.link')->middleware('throttle:monitoring-login');
 Route::get('/fae.php', function (\Illuminate\Http\Request $request) {
     if ($request->has('code')) {
         return redirect()->route('fae.link', ['code' => $request->query('code')]);
@@ -34,7 +36,12 @@ Route::middleware(['auth.monitoring'])->group(function () {
     Route::get('/tasks/timeline', [TaskController::class, 'getTimeline'])->name('tasks.timeline');
     Route::post('/tasks/update-progress/{task}', [TaskController::class, 'updateProgress'])->name('tasks.updateProgress');
     Route::post('/tasks/store-update', [TaskController::class, 'storeUpdate'])->name('tasks.storeUpdate');
-    Route::post('/profile/update-photo', [TaskController::class, 'updateProfile'])->name('profile.updatePhoto');
+    Route::post('/profile/update-photo', [ProfileController::class, 'updatePhoto'])->name('profile.updatePhoto');
+
+    // Authenticated file serving (private uploads)
+    Route::get('/files/{path}', [FileController::class, 'show'])
+        ->where('path', '.*')
+        ->name('files.show');
 
     // Calendar
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
@@ -46,6 +53,12 @@ Route::middleware(['auth.monitoring'])->group(function () {
         Route::post('/tasks', [TaskController::class, 'store'])->name('tasks.store');
         Route::put('/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
         Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
+
+        // Department management
+        Route::get('/departments', [DepartmentController::class, 'index'])->name('departments.index');
+        Route::post('/departments', [DepartmentController::class, 'store'])->name('departments.store');
+        Route::put('/departments/{department}', [DepartmentController::class, 'update'])->name('departments.update');
+        Route::delete('/departments/{department}', [DepartmentController::class, 'destroy'])->name('departments.destroy');
 
         // FAE management
         Route::get('/fae', [FaeController::class, 'index'])->name('fae.index');

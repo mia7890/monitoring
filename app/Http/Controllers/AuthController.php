@@ -20,8 +20,13 @@ class AuthController extends Controller
         $accessType = $request->input('access_type');
 
         if ($accessType === 'admin') {
+            if (!MonitoringAuth::adminKeyConfigured()) {
+                return back()->with('error', 'The administrator workspace is not configured. Contact your administrator.');
+            }
+
             $adminKey = (string)$request->input('admin_key', '');
             if (hash_equals(MonitoringAuth::adminKey(), $adminKey)) {
+                $request->session()->regenerate();
                 Session::put('monitoring_role', 'admin');
                 Session::forget(['monitoring_fae_id', 'monitoring_fae_name', 'monitoring_fae_code']);
                 return redirect()->route('dashboard');
@@ -33,6 +38,7 @@ class AuthController extends Controller
             $faeCode = strtoupper(trim((string)$request->input('fae_code', '')));
             $fae = FaeUser::where('fae_code', $faeCode)->first();
             if ($fae) {
+                $request->session()->regenerate();
                 Session::put('monitoring_role', 'fae');
                 Session::put('monitoring_fae_id', (int)$fae->id);
                 Session::put('monitoring_fae_name', $fae->name);
@@ -45,7 +51,7 @@ class AuthController extends Controller
         return back()->with('error', 'Invalid workspace selection.');
     }
 
-    public function directFaeLink(string $code)
+    public function directFaeLink(Request $request, string $code)
     {
         $faeCode = strtoupper(trim($code));
         $fae = FaeUser::where('fae_code', $faeCode)->first();
@@ -53,6 +59,7 @@ class AuthController extends Controller
             return redirect()->route('access')->with('error', 'This FAE link is invalid or no longer active.');
         }
 
+        $request->session()->regenerate();
         Session::put('monitoring_role', 'fae');
         Session::put('monitoring_fae_id', (int)$fae->id);
         Session::put('monitoring_fae_name', $fae->name);

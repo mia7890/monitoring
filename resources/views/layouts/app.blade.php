@@ -1,10 +1,11 @@
 @php
     use App\Services\MonitoringAuth;
+    use App\Services\NotificationService;
     $isAdmin = MonitoringAuth::isAdmin();
     $currentFaeId = MonitoringAuth::faeId();
     $currentFaeName = MonitoringAuth::faeName();
     $currentFaeCode = MonitoringAuth::faeCode();
-    $notificationItems = MonitoringAuth::notifications();
+    $notificationItems = NotificationService::notifications();
     $notificationCount = count($notificationItems);
     $notificationKey = hash('sha256', json_encode($notificationItems));
     $profileImage = MonitoringAuth::currentProfileImage();
@@ -17,7 +18,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Monitoring System') | Hytec Power Inc.</title>
 
-    <link rel="stylesheet" href="{{ asset('style.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset_versioned('style.css') }}">
     @stack('styles')
 
     <!-- Google Fonts -->
@@ -66,6 +67,16 @@
                         </svg>
                     </span>
                     <span>FAE</span>
+                </a>
+
+                <a href="{{ route('departments.index') }}" class="nav-item {{ request()->routeIs('departments.*') ? 'active' : '' }}">
+                    <span class="nav-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 7h16M4 12h16M4 17h10"/>
+                            <circle cx="17" cy="17" r="3"/>
+                        </svg>
+                    </span>
+                    <span>Departments</span>
                 </a>
             @endif
 
@@ -199,7 +210,7 @@
                     <div style="position:relative; flex-shrink:0;">
                         <div class="avatar">
                             @if(!empty($profileImage))
-                                <img class="profile-image" src="{{ asset($profileImage) }}" alt="{{ $currentFaeName }} profile">
+                                <img class="profile-image" src="{{ \App\Services\UploadService::url($profileImage) }}" alt="{{ $currentFaeName }} profile">
                             @else
                                 {{ $isAdmin ? 'AD' : strtoupper(substr($currentFaeName, 0, 2)) }}
                             @endif
@@ -259,7 +270,7 @@
                 <div style="margin-bottom:16px;">
                     <div class="avatar" style="width:70px; height:70px; font-size:24px; margin:0 auto 10px auto; border-radius:50%; overflow:hidden; background:var(--primary); color:white; display:flex; align-items:center; justify-content:center;">
                         @if(!empty($profileImage))
-                            <img src="{{ asset($profileImage) }}" style="width:100%; height:100%; object-fit:cover;" alt="Current profile picture">
+                            <img src="{{ \App\Services\UploadService::url($profileImage) }}" style="width:100%; height:100%; object-fit:cover;" alt="Current profile picture">
                         @else
                             {{ $isAdmin ? 'AD' : strtoupper(substr($currentFaeName, 0, 2)) }}
                         @endif
@@ -331,7 +342,7 @@
         });
     }
 </script>
-<script src="{{ asset('script.js') }}"></script>
+<script src="{{ asset_versioned('script.js') }}"></script>
 @stack('scripts')
 </body>
 </html>

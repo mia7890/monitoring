@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -42,9 +43,9 @@ class Task extends Model
 
     public function isOverdue(): bool
     {
-        if ($this->status === 'Completed') {
-            return false;
-        }
-        return $this->status === 'Overdue' || ($this->deadline && $this->deadline->isPast());
+        $today = Carbon::today()->format('Y-m-d');
+
+        return $this->status === 'Overdue'
+            || ($this->deadline && $this->deadline->format('Y-m-d') < $today && $this->status !== 'Completed');
     }
 }

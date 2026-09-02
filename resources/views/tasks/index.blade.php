@@ -124,7 +124,7 @@
                             <td>
                                 <div class="user-cell">
                                     @if($row->fae && $row->fae->profile_image)
-                                        <img src="{{ asset($row->fae->profile_image) }}" alt="{{ $row->fae->name }}" class="small-avatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                                        <img src="{{ \App\Services\UploadService::url($row->fae->profile_image) }}" alt="{{ $row->fae->name }}" class="small-avatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
                                     @else
                                         <div class="small-avatar" style="background: {{ $avatarCol }}; color:white;">
                                             {{ $faeInitials }}
@@ -799,7 +799,7 @@
                             if (u.attachment) {
                                 const ext = u.attachment.split('.').pop().toLowerCase();
                                 const isImg = ['jpg','jpeg','png','gif','webp','bmp'].includes(ext);
-                                const assetUrl = '{{ asset("") }}' + u.attachment;
+                                const assetUrl = '{{ url('files') }}/' + u.attachment;
                                 if (isImg) {
                                     html += '<div style="margin-top:10px;"><a href="' + assetUrl + '" target="_blank"><img src="' + assetUrl + '" alt="Attachment preview" style="max-height:150px; border-radius:6px; border:1px solid #ddd; display:block;"></a></div>';
                                 } else {

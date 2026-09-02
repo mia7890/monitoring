@@ -52,7 +52,8 @@ class DashboardController extends Controller
 
         // Tasks in next 7 days
         $upcomingTasksQuery = Task::whereNotNull('deadline')
-            ->whereBetween('deadline', [$today->format('Y-m-d'), $sevenDaysLater->format('Y-m-d')])
+            ->whereDate('deadline', '>=', $today->format('Y-m-d'))
+            ->whereDate('deadline', '<=', $sevenDaysLater->format('Y-m-d'))
             ->where('status', '!=', 'Completed');
         if (!$isAdmin && $currentFaeId) {
             $upcomingTasksQuery->where('fae_id', $currentFaeId);
@@ -67,7 +68,8 @@ class DashboardController extends Controller
         }
 
         // Appointments
-        $apptsQuery = Appointment::whereBetween('appointment_date', [$today->format('Y-m-d'), $sevenDaysLater->format('Y-m-d')]);
+        $apptsQuery = Appointment::whereDate('appointment_date', '>=', $today->format('Y-m-d'))
+            ->whereDate('appointment_date', '<=', $sevenDaysLater->format('Y-m-d'));
         if ($isAdmin) {
             $apptsQuery->where('status', 'pending');
         } else {
@@ -83,7 +85,8 @@ class DashboardController extends Controller
         }
 
         // Admin events
-        $eventsQuery = AdminEvent::whereBetween('event_date', [$today->format('Y-m-d'), $sevenDaysLater->format('Y-m-d')]);
+        $eventsQuery = AdminEvent::whereDate('event_date', '>=', $today->format('Y-m-d'))
+            ->whereDate('event_date', '<=', $sevenDaysLater->format('Y-m-d'));
         foreach ($eventsQuery->get() as $e) {
             $upcomingItems[] = [
                 'type' => 'event',

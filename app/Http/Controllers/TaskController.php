@@ -6,10 +6,9 @@ use App\Models\FaeUser;
 use App\Models\Task;
 use App\Models\TaskUpdate;
 use App\Services\MonitoringAuth;
-use Carbon\Carbon;
+use App\Services\UploadService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 class TaskController extends Controller
 {
@@ -17,7 +16,6 @@ class TaskController extends Controller
     {
         $isAdmin = MonitoringAuth::isAdmin();
         $currentFaeId = MonitoringAuth::faeId();
-        $todayStr = Carbon::today()->format('Y-m-d');
 
         // Query FAE list with summary statistics
         $faeQuery = FaeUser::with(['tasks']);
@@ -26,14 +24,14 @@ class TaskController extends Controller
         }
         $rawFaeList = $faeQuery->orderBy('name', 'asc')->get();
 
-        $faeList = $rawFaeList->map(function ($fae) use ($todayStr) {
+        $faeList = $rawFaeList->map(function ($fae) {
             $tasks = $fae->tasks;
             $totalAssigned = $tasks->count();
             $completedCount = $tasks->where('status', 'Completed')->count();
             $inProgressCount = $tasks->where('status', 'In Progress')->count();
             $pendingCount = $tasks->where('status', 'Pending')->count();
-            $overdueCount = $tasks->filter(function ($t) use ($todayStr) {
-                return $t->status === 'Overdue' || ($t->deadline && $t->deadline->format('Y-m-d') < $todayStr && $t->status !== 'Completed');
+            $overdueCount = $tasks->filter(function ($t) {
+                return $t->isOverdue();
             })->count();
             $avgProgress = $totalAssigned > 0 ? (float)$tasks->avg('progress') : 0;
 
@@ -73,7 +71,7 @@ class TaskController extends Controller
                 $pendingTasks++;
             }
 
-            if ($t->status === 'Overdue' || ($t->deadline && $t->deadline->format('Y-m-d') < $todayStr && $t->status !== 'Completed')) {
+            if ($t->isOverdue()) {
                 $overdueTasks++;
             }
         }
@@ -144,7 +142,17 @@ class TaskController extends Controller
     public function destroy(Task $task)
     {
         $taskName = $task->task_name;
+
+        $attachments = TaskUpdate::where('task_id', $task->id)
+            ->pluck('attachment')
+            ->filter()
+            ->unique();
+
         $task->delete();
+
+        foreach ($attachments as $attachment) {
+            UploadService::delete($attachment);
+        }
 
         return redirect()->route('tasks.index')->with('success', "Task '{$taskName}' deleted successfully.");
     }
@@ -175,6 +183,8 @@ class TaskController extends Controller
             'task_id' => 'required|exists:tasks,id',
             'message' => 'required|string',
             'attachment' => 'nullable|file|max:10240', // 10MB
+            'status' => ['nullable', Rule::in(['Pending', 'In Progress', 'Completed', 'Overdue'])],
+            'progress' => 'nullable|integer|between:0,100',
         ]);
 
         $taskId = (int)$request->input('task_id');
@@ -190,31 +200,24 @@ class TaskController extends Controller
         if ($request->hasFile('attachment') && $request->file('attachment')->isValid()) {
             $file = $request->file('attachment');
             $ext = strtolower($file->getClientOriginalExtension());
-            $allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'pdf', 'doc', 'docx', 'txt', 'zip'];
-            if (!in_array($ext, $allowedExts, true)) {
+            if (!in_array($ext, UploadService::ATTACHMENT_EXTENSIONS, true)) {
                 return back()->with('error', 'Supported attachments are JPG, PNG, GIF, WEBP, BMP, PDF, DOC, DOCX, TXT, and ZIP.');
             }
 
-            $uploadDir = public_path('uploads');
-            if (!File::exists($uploadDir)) {
-                File::makeDirectory($uploadDir, 0755, true);
-            }
-
-            $filename = 'report_' . $taskId . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
-            $file->move($uploadDir, $filename);
-            $attachmentPath = 'uploads/' . $filename;
+            $attachmentPath = UploadService::storeFile($file, 'report_' . $taskId . '_');
         }
 
-        $progressInput = $request->input('progress');
-        $newProgress = ($progressInput !== null && $progressInput !== '') ? max(0, min(100, (int)$progressInput)) : $task->progress;
+        $newProgress = $request->filled('progress')
+            ? max(0, min(100, (int)$request->input('progress')))
+            : $task->progress;
 
-        $statusInput = trim($request->input('status', ''));
-        $newStatus = !empty($statusInput) ? $statusInput : $task->status;
-        if ($progressInput !== null && $progressInput !== '' && empty($statusInput)) {
-            $newStatus = $newProgress >= 100 ? 'Completed' : ($newProgress > 0 ? 'In Progress' : 'Pending');
-        }
+        $newStatus = $request->filled('status')
+            ? trim((string)$request->input('status'))
+            : ($request->filled('progress')
+                ? ($newProgress >= 100 ? 'Completed' : ($newProgress > 0 ? 'In Progress' : 'Pending'))
+                : $task->status);
 
-        $taskUpdate = TaskUpdate::create([
+        TaskUpdate::create([
             'task_id' => $taskId,
             'fae_id' => $isAdmin ? null : $currentFaeId,
             'author_role' => $isAdmin ? 'admin' : 'fae',
@@ -269,41 +272,5 @@ class TaskController extends Controller
             'current_user_name' => $isAdmin ? 'Administrator' : MonitoringAuth::faeName(),
             'is_admin' => $isAdmin,
         ]);
-    }
-
-    public function updateProfile(Request $request)
-    {
-        $request->validate([
-            'profile_image' => 'required|image|mimes:jpg,jpeg,png,gif,webp|max:2048',
-        ]);
-
-        $isAdmin = MonitoringAuth::isAdmin();
-        $currentFaeId = MonitoringAuth::faeId();
-
-        if (!$isAdmin && !$currentFaeId) {
-            return back()->with('error', 'You must be logged in to update your profile picture.');
-        }
-
-        if ($request->hasFile('profile_image') && $request->file('profile_image')->isValid()) {
-            $file = $request->file('profile_image');
-            $ext = strtolower($file->getClientOriginalExtension());
-            $uploadDir = public_path('uploads');
-            if (!File::exists($uploadDir)) {
-                File::makeDirectory($uploadDir, 0755, true);
-            }
-
-            $filename = ($isAdmin ? 'admin_' : 'fae_' . $currentFaeId . '_') . bin2hex(random_bytes(8)) . '.' . $ext;
-            $file->move($uploadDir, $filename);
-            $profileImage = 'uploads/' . $filename;
-
-            if ($isAdmin) {
-                session(['monitoring_admin_profile_image' => $profileImage]);
-            } else {
-                $fae = FaeUser::findOrFail($currentFaeId);
-                $fae->update(['profile_image' => $profileImage]);
-            }
-        }
-
-        return back()->with('success', 'Profile picture updated successfully!');
     }
 }

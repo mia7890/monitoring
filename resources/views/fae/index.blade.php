@@ -27,7 +27,12 @@
             @csrf
             <input class="form-control" name="name" required placeholder="Full name">
             <input class="form-control" name="fae_code" required placeholder="FAE code (e.g. FAE-001)">
-            <input class="form-control" name="department" placeholder="Department">
+            <select class="form-control" name="department_id" required>
+                <option value="">Select Department</option>
+                @foreach($departments as $department)
+                    <option value="{{ $department->id }}">{{ $department->department_name }}</option>
+                @endforeach
+            </select>
             <button class="primary-button btn-sm" type="submit">＋ Add FAE</button>
         </form>
 
@@ -41,7 +46,7 @@
                         <div class="fae-card-top">
                             <div class="fae-avatar-box" style="background:var(--primary);color:white;">
                                 @if(!empty($fae->profile_image))
-                                    <img class="fae-profile-image" src="{{ asset($fae->profile_image) }}" alt="{{ $fae->name }} profile picture">
+                                    <img class="fae-profile-image" src="{{ \App\Services\UploadService::url($fae->profile_image) }}" alt="{{ $fae->name }} profile picture">
                                 @else
                                     {{ strtoupper(substr($fae->name, 0, 2)) }}
                                 @endif
@@ -49,7 +54,7 @@
                             <div class="fae-info">
                                 <h3>{{ $fae->name }}</h3>
                                 <span class="fae-code-badge">{{ $fae->fae_code }}</span>
-                                <div class="fae-dept">{{ $fae->department ?? 'Field Engineering' }}</div>
+                                <div class="fae-dept">{{ $fae->department_name }}</div>
                             </div>
                         </div>
 
