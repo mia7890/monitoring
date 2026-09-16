@@ -445,7 +445,6 @@
 
 @push('scripts')
 <script>
-    var isGoogleConnected = @json(\App\Services\MonitoringAuth::currentGoogleConnected());
 
     // Task Progress Line Chart
     const progressCanvas = document.getElementById("progressChart");
@@ -814,27 +813,6 @@
                                 const ext = u.attachment.split('.').pop().toLowerCase();
                                 const isImg = ['jpg','jpeg','png','gif','webp','bmp'].includes(ext);
                                 const assetUrl = '{{ url('files') }}/' + u.attachment;
-                                const driveUploadUrl = '{{ route('google.uploadDrive') }}';
-                                const csrfToken = '{{ csrf_token() }}';
-
-                                let driveBtn = '';
-                                if (isGoogleConnected) {
-                                    driveBtn = '<form method="POST" action="' + driveUploadUrl + '" style="display:inline; margin-left:6px;">' +
-                                                   '<input type="hidden" name="_token" value="' + csrfToken + '">' +
-                                                   '<input type="hidden" name="filepath" value="' + escapeHtml(u.attachment) + '">' +
-                                                   '<input type="hidden" name="author_name" value="' + escapeHtml(u.author_name || '') + '">' +
-                                                   '<input type="hidden" name="author_role" value="' + escapeHtml(authorBadge || '') + '">' +
-                                                   '<input type="hidden" name="message" value="' + escapeHtml(u.message || '') + '">' +
-                                                   '<input type="hidden" name="created_at" value="' + escapeHtml(formatDate(u.created_at) || '') + '">' +
-                                                   '<input type="hidden" name="progress" value="' + (u.progress_at_update !== null && u.progress_at_update !== undefined ? parseInt(u.progress_at_update) + '%' : '') + '">' +
-                                                   '<input type="hidden" name="status" value="' + escapeHtml(u.status_at_update || '') + '">' +
-                                                   '<input type="hidden" name="task_name" value="' + escapeHtml((t && t.task_name ? t.task_name : '') || '') + '">' +
-                                                   '<button type="submit" class="outline-button btn-sm" title="Save this message context & attachment to your connected Google Drive" style="display:inline-flex; align-items:center; gap:4px;">' +
-                                                       '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>' +
-                                                       'Save to Drive' +
-                                                   '</button>' +
-                                               '</form>';
-                                }
 
                                 if (isImg) {
                                     html += '<div style="margin-top:10px;">' +

@@ -200,22 +200,10 @@
                                     $gUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text={$gTitle}&dates={$gDate}/{$gEnd}&details={$gDetails}";
                                 @endphp
 
-                                @if(MonitoringAuth::currentGoogleConnected())
-                                    <form method="POST" action="{{ route('google.syncCalendar') }}" style="display:inline;" title="Sync directly to your connected Google Calendar">
-                                        @csrf
-                                        <input type="hidden" name="type" value="task">
-                                        <input type="hidden" name="id" value="{{ $row->id }}">
-                                        <button type="submit" class="google-calendar-link" style="background:none; border:none; padding:0; cursor:pointer; font-size:11px; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:3px;">
-                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                                             Sync Cal
-                                        </button>
-                                    </form>
-                                @else
-                                    <a href="{{ $gUrl }}" target="_blank" rel="noopener" class="google-calendar-link" title="Sync deadline to Google Calendar">
-                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                                        Sync Cal
-                                    </a>
-                                @endif
+                                <a href="{{ $gUrl }}" target="_blank" rel="noopener" class="google-calendar-link" title="Sync deadline to Google Calendar">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                    Sync Cal
+                                </a>
 
 
                                 <button type="button" 
@@ -575,7 +563,6 @@
 
 @push('scripts')
 <script>
-    var isGoogleConnected = @json(\App\Services\MonitoringAuth::currentGoogleConnected());
 
     // Modal Helpers
     function openModal(modalId) {
@@ -823,27 +810,6 @@
                                 const ext = u.attachment.split('.').pop().toLowerCase();
                                 const isImg = ['jpg','jpeg','png','gif','webp','bmp'].includes(ext);
                                 const assetUrl = '{{ url('files') }}/' + u.attachment;
-                                const driveUploadUrl = '{{ route('google.uploadDrive') }}';
-                                const csrfToken = '{{ csrf_token() }}';
-
-                                let driveBtn = '';
-                                if (isGoogleConnected) {
-                                    driveBtn = '<form method="POST" action="' + driveUploadUrl + '" style="display:inline; margin-left:6px;">' +
-                                                   '<input type="hidden" name="_token" value="' + csrfToken + '">' +
-                                                   '<input type="hidden" name="filepath" value="' + escapeHtml(u.attachment) + '">' +
-                                                   '<input type="hidden" name="author_name" value="' + escapeHtml(u.author_name || '') + '">' +
-                                                   '<input type="hidden" name="author_role" value="' + escapeHtml(authorBadge || '') + '">' +
-                                                   '<input type="hidden" name="message" value="' + escapeHtml(u.message || '') + '">' +
-                                                   '<input type="hidden" name="created_at" value="' + escapeHtml(formatDate(u.created_at) || '') + '">' +
-                                                   '<input type="hidden" name="progress" value="' + (u.progress_at_update !== null && u.progress_at_update !== undefined ? parseInt(u.progress_at_update) + '%' : '') + '">' +
-                                                   '<input type="hidden" name="status" value="' + escapeHtml(u.status_at_update || '') + '">' +
-                                                   '<input type="hidden" name="task_name" value="' + escapeHtml((t && t.task_name ? t.task_name : '') || '') + '">' +
-                                                   '<button type="submit" class="outline-button btn-sm" title="Save this message context & attachment to your connected Google Drive" style="display:inline-flex; align-items:center; gap:4px;">' +
-                                                       '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>' +
-                                                       'Save to Drive' +
-                                                   '</button>' +
-                                               '</form>';
-                                }
 
                                 if (isImg) {
                                     html += '<div style="margin-top:10px;">' +

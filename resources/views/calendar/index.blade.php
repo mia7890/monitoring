@@ -297,114 +297,7 @@
                 </div>
             @endif
 
-            <div class="wireframe-panel" style="background:white; padding:20px 20px; border-radius:8px;">
-                @php
-                    $isGoogleConnected = \App\Services\MonitoringAuth::currentGoogleConnected();
-                    $googleEmail = \App\Services\MonitoringAuth::currentGoogleEmail();
-                @endphp
-                <div class="google-tools" style="margin-top:0; padding-top:0; border-top:none;">
-                    <div class="google-tools-header">
-                        <strong>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
-                                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
-                            </svg>
-                            Google Workspace
-                        </strong>
-                        @if($isGoogleConnected)
-                            <span class="google-status-badge connected" title="Connected to Google Account">
-                                <span style="width:6px; height:6px; border-radius:50%; background:#10b981; display:inline-block;"></span>
-                                Connected
-                            </span>
-                        @else
-                            <span class="google-status-badge disconnected" title="Account not linked">
-                                <span style="width:6px; height:6px; border-radius:50%; background:#f59e0b; display:inline-block;"></span>
-                                Sign-in Required
-                            </span>
-                        @endif
-                    </div>
 
-                    @if($isGoogleConnected)
-                        <p class="google-tools-desc">
-                            Linked: <strong style="color:var(--text);">{{ $googleEmail }}</strong>
-                        </p>
-
-                        <div class="google-cards-grid">
-                            <!-- GOOGLE CALENDAR -->
-                            <a href="https://calendar.google.com" target="_blank" rel="noopener" class="google-app-card" title="Open Google Calendar">
-                                <div class="google-app-card-top">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                                    <strong>Calendar</strong>
-                                </div>
-                                <span>View synced appointments &amp; deadlines</span>
-                                <span class="btn-card-action">Open Calendar &rarr;</span>
-                            </a>
-
-                            <!-- GOOGLE DRIVE -->
-                            <a href="https://drive.google.com" target="_blank" rel="noopener" class="google-app-card" title="Open Google Drive">
-                                <div class="google-app-card-top">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-                                    <strong>Drive</strong>
-                                </div>
-                                <span>Cloud reports &amp; file storage</span>
-                                <span class="btn-card-action">Open Drive &rarr;</span>
-                            </a>
-                        </div>
-
-                        <div style="display:flex; gap:6px; margin-top:6px;">
-                            <button type="button" class="outline-button btn-sm" id="openDriveUploadModalBtn" style="flex:1; justify-content:center; display:inline-flex; align-items:center; gap:5px; font-size:11px;">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                                Upload to Google Drive
-                            </button>
-                            <form method="POST" action="{{ route('google.disconnect') }}" onsubmit="return confirm('Disconnect and log out this Google account?');" style="margin:0; display:inline;">
-                                @csrf
-                                <button type="submit" class="outline-button btn-sm" style="color:#ef4444; border-color:#fca5a5; font-size:11px; padding:6px 10px; display:inline-flex; align-items:center; gap:4px;" title="Log out / Disconnect Google Account">
-                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                                    Log out
-                                </button>
-                            </form>
-                        </div>
-                    @else
-                        <p class="google-tools-desc">
-                            Connect your Google account to sync appointments with <strong>Google Calendar</strong> and store reports &amp; files in <strong>Google Drive</strong>.
-                        </p>
-
-                        <div class="google-cards-grid">
-                            <!-- GOOGLE CALENDAR (NOT CONNECTED) -->
-                            <a href="{{ route('google.redirect') }}" class="google-app-card" title="Sign in to link Google Calendar">
-                                <div class="google-app-card-top">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                                    <strong>Calendar</strong>
-                                </div>
-                                <span>Sign in to enable appointment sync</span>
-                                <span class="btn-card-action">Connect &rarr;</span>
-                            </a>
-
-                            <!-- GOOGLE DRIVE (NOT CONNECTED) -->
-                            <a href="{{ route('google.redirect') }}" class="google-app-card" title="Sign in to link Google Drive">
-                                <div class="google-app-card-top">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-                                    <strong>Drive</strong>
-                                </div>
-                                <span>Sign in to store report files</span>
-                                <span class="btn-card-action">Connect &rarr;</span>
-                            </a>
-                        </div>
-
-                        <a href="{{ route('google.redirect') }}" class="google-connect-cta" style="margin-top:6px;">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
-                                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
-                            </svg>
-                            Sign In to Google Workspace
-                        </a>
-                    @endif
-                </div>
-            </div>
 
             <!-- Admin Events List -->
             @if($monthAdminEvents->count() > 0)
@@ -513,20 +406,7 @@
                                 <td><small style="color:{{ $effectiveSt === 'expired' ? '#cbd5e1' : 'var(--text-light)' }};">{{ $ap->admin_comment ?? '—' }}</small></td>
                                 <td>
                                     @if($effectiveSt !== 'expired')
-                                        <div style="display:flex; align-items:center; gap:6px;">
-                                            @if(MonitoringAuth::currentGoogleConnected())
-                                                <form method="POST" action="{{ route('google.syncCalendar') }}" style="display:inline;" title="Sync directly to Google Calendar">
-                                                    @csrf
-                                                    <input type="hidden" name="type" value="appointment">
-                                                    <input type="hidden" name="id" value="{{ $ap->id }}">
-                                                    <button type="submit" class="google-calendar-link" style="background:none; border:none; padding:0; cursor:pointer; font-size:11px; font-weight:600; text-decoration:none; white-space:nowrap;">
-                                                         Sync
-                                                    </button>
-                                                </form>
-                                                <span style="color:#cbd5e1;">|</span>
-                                            @endif
-                                            <a class="google-calendar-link" href="{{ $googleUrl }}" target="_blank" rel="noopener" style="font-size:11px;">Link</a>
-                                        </div>
+                                        <a class="google-calendar-link" href="{{ $googleUrl }}" target="_blank" rel="noopener" style="font-size:11px;">Link</a>
                                     @else
                                         <small style="color:#cbd5e1;">—</small>
                                     @endif
@@ -692,38 +572,7 @@
 </div>
 
 <!-- Google Drive Upload Modal -->
-<div class="custom-modal-overlay" id="driveUploadModalOverlay">
-    <div class="custom-modal" style="max-width:440px;">
-        <div class="custom-modal-header">
-            <div style="display:flex; align-items:center; gap:8px;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-                <h3>Upload to Google Drive</h3>
-            </div>
-            <button type="button" class="custom-modal-close" id="driveUploadModalClose">&times;</button>
-        </div>
-        <form method="POST" action="{{ route('google.uploadDrive') }}" enctype="multipart/form-data">
-            @csrf
-            <div class="custom-modal-body">
-                <p style="font-size:12px; color:var(--text-light); margin-bottom:14px;">
-                    Upload inspection reports, photos, or documents directly to your connected Google Drive (<strong>{{ \App\Services\MonitoringAuth::currentGoogleEmail() }}</strong>).
-                </p>
 
-                <div class="form-group">
-                    <label class="form-label">Select Report or Document <span class="req">*</span></label>
-                    <input type="file" name="file" class="form-control" required accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip">
-                    <small style="font-size:10px; color:var(--text-light); margin-top:4px; display:block;">Supported: PDF, Word, Excel, Images, ZIP (Max 25MB).</small>
-                </div>
-            </div>
-            <div class="custom-modal-footer">
-                <button type="button" class="secondary-button btn-sm" id="cancelDriveUploadBtn">Cancel</button>
-                <button type="submit" class="primary-button btn-sm" style="background:#059669; border-color:#059669;">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                    Upload Now
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
 
 @if(!$isAdmin)
 <!-- Booking Modal (Triggered by clicking open date) -->

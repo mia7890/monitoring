@@ -117,7 +117,7 @@
                                                             <span style="background:#e0f2fe; color:#0369a1; font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px; flex-shrink:0;">{{ $fae->fae_code }}</span>
                                                         </div>
                                                         @php
-                                                            $displayEmail = $fae->email ?: $fae->google_email;
+                                                            $displayEmail = $fae->email;
                                                         @endphp
                                                         @if(!empty($displayEmail))
                                                             <span style="display:block; font-size:11px; color:var(--text-light); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px;" title="{{ $displayEmail }}">

@@ -617,14 +617,14 @@
                     </div>
                 </div>
 
-                <!-- 3. GOOGLE CALENDAR -->
+                <!-- 3. CALENDAR SCHEDULE -->
                 <div class="wireframe-panel">
-                    <h3>GOOGLE CALENDAR</h3>
+                    <h3>CALENDAR SCHEDULE</h3>
                     <p style="font-size:10.5px; color:var(--text-light); line-height:1.35; margin:0 0 8px 0;">
-                        Sync monitoring deadlines directly with Google Workspace.
+                        View monitoring deadlines and schedule appointments directly on the system.
                     </p>
-                    <a href="https://calendar.google.com" target="_blank" rel="noopener" class="google-calendar-link" style="font-size:10.5px; padding:4px 10px; display:inline-block; text-decoration:none; font-weight:600;">
-                        Open Google Calendar →
+                    <a href="{{ route('calendar.index') }}" class="primary-button btn-sm" style="font-size:10.5px; padding:4px 10px; display:inline-block; text-decoration:none; font-weight:600;">
+                        View Schedule →
                     </a>
                 </div>
 

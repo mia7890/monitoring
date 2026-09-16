@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Mail\AdminKeyMail;
 use App\Models\FaeUser;
 use App\Models\Setting;
-use App\Services\GoogleService;
 use App\Services\MonitoringAuth;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
 
@@ -93,22 +93,10 @@ class AuthController extends Controller
 
         try {
             Mail::to($adminEmail)->send(new AdminKeyMail(MonitoringAuth::adminKey()));
+            return back()->with('success', 'The admin key has been sent to the registered admin email address.');
         } catch (\Throwable $e) {
-            if (MonitoringAuth::adminGoogleConnected()) {
-                $token = Setting::get('admin_google_access_token');
-                $refresh = Setting::get('admin_google_refresh_token');
-                $expires = Setting::get('admin_google_token_expires_at');
-                GoogleService::sendGmailMessage(
-                    (string)$token,
-                    $refresh ? (string)$refresh : null,
-                    $expires ? (string)$expires : null,
-                    $adminEmail,
-                    'Your Monitoring System Admin Key',
-                    (new AdminKeyMail(MonitoringAuth::adminKey()))->buildHtml()
-                );
-            }
+            Log::error('Failed to send admin key recovery email via SMTP: ' . $e->getMessage());
+            return back()->with('error', 'Failed to send recovery email via SMTP: ' . $e->getMessage());
         }
-
-        return back()->with('success', 'The admin key has been sent to the registered admin email address.');
     }
 }

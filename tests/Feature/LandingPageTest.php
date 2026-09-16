@@ -21,7 +21,7 @@ class LandingPageTest extends TestCase
             ->assertSee('Schedule & Monitoring Portal')
             ->assertSee('Open Workspace Portal')
             ->assertSee('SCHEDULE GUIDE AND STATUS')
-            ->assertSee('GOOGLE CALENDAR')
+            ->assertSee('CALENDAR SCHEDULE')
             ->assertSee('UPCOMING EVENT');
     }
 
