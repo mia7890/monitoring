@@ -102,20 +102,29 @@
                                         <div class="members-list">
                                             @foreach($department->faes as $fae)
                                                 <div class="member-badge">
-                                                    @if(!empty($fae->profile_image))
-                                                        <img src="{{ \App\Services\UploadService::url($fae->profile_image) }}" alt="{{ $fae->name }}" style="width:20px; height:20px; border-radius:50%; object-fit:cover;">
-                                                    @else
-                                                        <div style="width:20px; height:20px; border-radius:50%; background:var(--primary); color:white; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:600;">
-                                                            {{ strtoupper(substr($fae->name, 0, 1)) }}
+                                                    <div style="flex-shrink:0;">
+                                                        @if(!empty($fae->profile_image))
+                                                            <img src="{{ \App\Services\UploadService::url($fae->profile_image) }}" alt="{{ $fae->name }}" style="width:34px; height:34px; border-radius:50%; object-fit:cover; border:1px solid var(--border); display:block;">
+                                                        @else
+                                                            <div style="width:34px; height:34px; border-radius:50%; background:var(--primary); color:white; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700;">
+                                                                {{ strtoupper(substr($fae->name, 0, 2)) }}
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                    <div class="member-details" style="flex:1; min-width:0;">
+                                                        <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+                                                            <strong style="font-size:13px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="{{ $fae->name }}">{{ $fae->name }}</strong>
+                                                            <span style="background:#e0f2fe; color:#0369a1; font-size:10px; font-weight:700; padding:1px 6px; border-radius:4px; flex-shrink:0;">{{ $fae->fae_code }}</span>
                                                         </div>
-                                                    @endif
-                                                    <span>
-                                                        <strong>{{ $fae->name }}</strong>
-                                                        <span style="display:block; font-size:11px; color:var(--text-light);">{{ $fae->fae_code }}</span>
-                                                    </span>
-                                                    @if(!empty($fae->email))
-                                                        <span style="font-size:11px; color:var(--text-light);" title="{{ $fae->email }}">{{ substr($fae->email, 0, 20) }}...</span>
-                                                    @endif
+                                                        @php
+                                                            $displayEmail = $fae->email ?: $fae->google_email;
+                                                        @endphp
+                                                        @if(!empty($displayEmail))
+                                                            <span style="display:block; font-size:11px; color:var(--text-light); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px;" title="{{ $displayEmail }}">
+                                                                {{ $displayEmail }}
+                                                            </span>
+                                                        @endif
+                                                    </div>
                                                 </div>
                                             @endforeach
                                         </div>
@@ -177,16 +186,16 @@
 
         .members-list {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             gap: 12px;
             margin-top: 12px;
         }
 
         .member-badge {
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             gap: 10px;
-            padding: 10px;
+            padding: 10px 12px;
             background: white;
             border: 1px solid rgba(59, 130, 246, 0.2);
             border-radius: 8px;
@@ -198,19 +207,6 @@
             border-color: rgba(59, 130, 246, 0.4);
             background: rgba(59, 130, 246, 0.02);
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-        }
-
-        .member-badge > span {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .member-badge strong {
-            display: block;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            font-size: 13px;
         }
 
         @media (max-width: 768px) {

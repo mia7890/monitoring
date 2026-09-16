@@ -19,15 +19,10 @@ class LandingPageTest extends TestCase
         $response->assertStatus(200)
             ->assertSee('Hytec Power Inc.')
             ->assertSee('Schedule & Monitoring Portal')
-            ->assertSee('FAE Access')
-            ->assertSee('Supervisor Sign In')
+            ->assertSee('Open Workspace Portal')
             ->assertSee('SCHEDULE GUIDE AND STATUS')
-            ->assertSee('TOTAL TASK')
-            ->assertSee('IN PROGRES')
-            ->assertSee('COMPLETED')
             ->assertSee('GOOGLE CALENDAR')
-            ->assertSee('UPCOMING EVENT')
-            ->assertSee('WORKSPACE ACCESS');
+            ->assertSee('UPCOMING EVENT');
     }
 
     public function test_landing_page_displays_scheduled_events_and_tasks(): void
@@ -64,28 +59,6 @@ class LandingPageTest extends TestCase
         $response->assertStatus(200)
             ->assertSee('Go to Dashboard')
             ->assertSee('Sign out');
-    }
-
-    public function test_landing_page_displays_wireframe_kpi_counts(): void
-    {
-        Task::create([
-            'task_name' => 'In Progress Task 1',
-            'status' => 'In Progress',
-            'progress' => 40,
-        ]);
-
-        Task::create([
-            'task_name' => 'Completed Task 1',
-            'status' => 'Completed',
-            'progress' => 100,
-        ]);
-
-        $response = $this->get('/');
-
-        $response->assertStatus(200)
-            ->assertSee('TOTAL TASK')
-            ->assertSee('IN PROGRES')
-            ->assertSee('COMPLETED');
     }
 
     public function test_access_page_includes_back_to_home_button(): void

@@ -68,16 +68,6 @@
                     </span>
                     <span>FAE</span>
                 </a>
-
-                <a href="{{ route('departments.index') }}" class="nav-item {{ request()->routeIs('departments.*') ? 'active' : '' }}">
-                    <span class="nav-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M4 7h16M4 12h16M4 17h10"/>
-                            <circle cx="17" cy="17" r="3"/>
-                        </svg>
-                    </span>
-                    <span>Departments</span>
-                </a>
             @endif
 
             <a href="{{ route('tasks.index') }}" class="nav-item {{ request()->routeIs('tasks.*') ? 'active' : '' }}">
@@ -89,6 +79,18 @@
                 </span>
                 <span>Tasks</span>
             </a>
+
+            @if($isAdmin)
+                <a href="{{ route('departments.index') }}" class="nav-item {{ request()->routeIs('departments.*') ? 'active' : '' }}">
+                    <span class="nav-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 7h16M4 12h16M4 17h10"/>
+                            <circle cx="17" cy="17" r="3"/>
+                        </svg>
+                    </span>
+                    <span>Departments</span>
+                </a>
+            @endif
 
             <a href="{{ route('calendar.index') }}" class="nav-item {{ request()->routeIs('calendar.*') ? 'active' : '' }}">
                 <span class="nav-icon">
@@ -102,6 +104,17 @@
                 <span>Calendar</span>
             </a>
 
+            @if($isAdmin)
+                <a href="{{ route('settings.index') }}" class="nav-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+                    <span class="nav-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </span>
+                    <span>Settings</span>
+                </a>
+            @endif
         </nav>
 
         <div class="sidebar-bottom">
@@ -229,8 +242,14 @@
 
         <!-- FLASH MESSAGES -->
         @if(session('success') || session('msg'))
-            <div class="alert-banner success" style="margin: 20px 30px 0 30px;">
-                {{ session('success') ?: session('msg') }}
+            <div class="alert-banner success" style="margin: 20px 30px 0 30px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                <span>{{ session('success') ?: session('msg') }}</span>
+                @if(session('success_link'))
+                    <a href="{{ session('success_link') }}" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center; gap: 6px; background: #059669; color: #ffffff; padding: 5px 12px; border-radius: 6px; font-weight: 600; font-size: 12px; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,0.08);">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                        View in Google Drive &rarr;
+                    </a>
+                @endif
             </div>
         @endif
 
@@ -256,43 +275,90 @@
     </main>
 </div>
 
-<!-- PROFILE PHOTO UPDATE MODAL -->
+<!-- PROFILE PHOTO & GOOGLE ACCOUNT MODAL -->
 <div class="custom-modal-overlay" id="updateProfilePhotoModal">
-    <div class="custom-modal" style="max-width:400px;">
+    <div class="custom-modal" style="max-width:440px;">
         <div class="custom-modal-header">
-            <h3>Update Profile Picture</h3>
+            <h3>Profile &amp; Google Account</h3>
             <button type="button" class="custom-modal-close" onclick="closeProfileModal()">&times;</button>
         </div>
 
-        <form method="POST" action="{{ route('profile.updatePhoto') }}" enctype="multipart/form-data">
-            @csrf
-            <div class="custom-modal-body" style="text-align:center;">
-                <div style="margin-bottom:16px;">
-                    <div class="avatar" style="width:70px; height:70px; font-size:24px; margin:0 auto 10px auto; border-radius:50%; overflow:hidden; background:var(--primary); color:white; display:flex; align-items:center; justify-content:center;">
-                        @if(!empty($profileImage))
-                            <img src="{{ \App\Services\UploadService::url($profileImage) }}" style="width:100%; height:100%; object-fit:cover;" alt="Current profile picture">
-                        @else
-                            {{ $isAdmin ? 'AD' : strtoupper(substr($currentFaeName, 0, 2)) }}
-                        @endif
-                    </div>
-                    <strong style="display:block; font-size:13px; color:var(--text);">{{ $isAdmin ? 'Administrator' : $currentFaeName }}</strong>
-                    <span style="font-size:11px; color:var(--text-light);">{{ $isAdmin ? 'Admin Profile' : ($currentFaeCode ?: 'FAE Profile') }}</span>
+        <div class="custom-modal-body" style="text-align:left;">
+            <!-- Current User Info -->
+            <div style="text-align:center; margin-bottom:16px;">
+                <div class="avatar" style="width:70px; height:70px; font-size:24px; margin:0 auto 10px auto; border-radius:50%; overflow:hidden; background:var(--primary); color:white; display:flex; align-items:center; justify-content:center;">
+                    @if(!empty($profileImage))
+                        <img src="{{ \App\Services\UploadService::url($profileImage) }}" style="width:100%; height:100%; object-fit:cover;" alt="Current profile picture">
+                    @else
+                        {{ $isAdmin ? 'AD' : strtoupper(substr($currentFaeName, 0, 2)) }}
+                    @endif
+                </div>
+                <strong style="display:block; font-size:14px; color:var(--text);">{{ $isAdmin ? 'Administrator' : $currentFaeName }}</strong>
+                <span style="font-size:11px; color:var(--text-light);">{{ $isAdmin ? 'Admin Profile' : ($currentFaeCode ?: 'FAE Profile') }}</span>
+            </div>
+
+            <!-- Connected Google Account Section -->
+            @php
+                $isGoogleConn = MonitoringAuth::currentGoogleConnected();
+                $googleEmail = MonitoringAuth::currentGoogleEmail();
+                $googleAvatar = MonitoringAuth::currentGoogleAvatar();
+            @endphp
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:14px; margin-bottom:16px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <strong style="font-size:12px; color:var(--text); display:flex; align-items:center; gap:6px;">
+                        <svg width="14" height="14" viewBox="0 0 48 48">
+                            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                        </svg>
+                        Google / Gmail Account
+                    </strong>
+                    @if($isGoogleConn)
+                        <span style="background:#22c55e; color:#fff; font-size:9px; font-weight:700; padding:2px 6px; border-radius:4px;">CONNECTED</span>
+                    @else
+                        <span style="background:#94a3b8; color:#fff; font-size:9px; font-weight:700; padding:2px 6px; border-radius:4px;">NOT CONNECTED</span>
+                    @endif
                 </div>
 
-                <div class="form-group" style="text-align:left;">
-                    <label class="form-label">Select New Image File <span class="req">*</span></label>
+                @if($isGoogleConn)
+                    <div style="font-size:12px; color:#166534; word-break:break-all; margin-bottom:10px;">
+                        ✓ Linked to: <strong>{{ $googleEmail }}</strong>
+                    </div>
+                    <form method="POST" action="{{ route('google.disconnect') }}" onsubmit="return confirm('Disconnect this Google account?');">
+                        @csrf
+                        <button type="submit" class="secondary-button btn-sm" style="color:#ef4444; border-color:#fca5a5; width:100%; font-size:11px;">
+                            Disconnect Google Account
+                        </button>
+                    </form>
+                @else
+                    <p style="font-size:11px; color:var(--text-light); margin:0 0 10px 0;">
+                        Connect your Google account to sync appointments with Google Calendar and save reports directly to Google Drive.
+                    </p>
+                    <a href="{{ route('google.redirect', ['mode' => $isAdmin ? 'connect_admin' : 'connect_fae']) }}" class="primary-button btn-sm" style="display:flex; align-items:center; justify-content:center; gap:6px; text-decoration:none; font-size:12px; width:100%;">
+                        Connect Google Account
+                    </a>
+                @endif
+            </div>
+
+            <!-- Profile Photo Upload -->
+            <form method="POST" action="{{ route('profile.updatePhoto') }}" enctype="multipart/form-data">
+                @csrf
+                <div class="form-group">
+                    <label class="form-label">Upload Custom Profile Picture</label>
                     <input type="file" name="profile_image" class="form-control" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif" required>
                     <small style="font-size:10px; color:var(--text-light); margin-top:4px; display:block;">Supported formats: JPG, PNG, WEBP, GIF (Max 2MB)</small>
                 </div>
-            </div>
 
-            <div class="custom-modal-footer">
-                <button type="button" class="secondary-button btn-sm" onclick="closeProfileModal()">Cancel</button>
-                <button type="submit" class="primary-button btn-sm">Upload &amp; Save</button>
-            </div>
-        </form>
+                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:14px;">
+                    <button type="button" class="secondary-button btn-sm" onclick="closeProfileModal()">Cancel</button>
+                    <button type="submit" class="primary-button btn-sm">Save Photo</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
+
 
 <!-- Core JavaScript -->
 <script>

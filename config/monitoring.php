@@ -16,4 +16,16 @@ return [
 
     'admin_key' => env('MONITORING_ADMIN_KEY'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Administrator Recovery Email
+    |--------------------------------------------------------------------------
+    |
+    | The email address where the "Forgot Admin Key" recovery message will be
+    | sent. If this is not set, the forgot-key feature will be disabled.
+    |
+    */
+
+    'admin_email' => env('MONITORING_ADMIN_EMAIL'),
+
 ];

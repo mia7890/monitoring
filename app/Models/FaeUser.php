@@ -20,7 +20,24 @@ class FaeUser extends Model
         'department_id',
         'phone',
         'profile_image',
+        'google_id',
+        'google_email',
+        'google_avatar',
+        'google_access_token',
+        'google_refresh_token',
+        'google_token_expires_at',
     ];
+
+    protected $hidden = [
+        'google_access_token',
+        'google_refresh_token',
+    ];
+
+    public function hasGoogleAccount(): bool
+    {
+        return !empty($this->google_id) || !empty($this->google_email);
+    }
+
 
     public function department(): BelongsTo
     {

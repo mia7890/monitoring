@@ -78,10 +78,17 @@ textarea {
 }
 
 .logo-icon {
-    width: 28px;
-    height: 28px;
+    width: 36px;
+    height: 36px;
     flex-shrink: 0;
+    border-radius: 50%;
+    background: #ffffff;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15), 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .logo-icon img,
@@ -90,6 +97,7 @@ textarea {
     height: 100%;
     display: block;
     object-fit: contain;
+    border-radius: 50%;
 }
 
 .logo-text h2 {
@@ -101,7 +109,7 @@ textarea {
 
 .logo-text span {
     font-size: 10px;
-    color: #555;
+    color: #94a3b8;
 }
 
 .menu-title {
@@ -112,30 +120,36 @@ textarea {
     display: flex;
     flex-direction: column;
     padding: 8px;
-    gap: 1px;
+    gap: 2px;
 }
 
 .nav-item {
-    color: #666;
+    color: #cbd5e1;
     text-decoration: none;
-    padding: 8px 10px;
-    border-radius: 4px;
+    padding: 10px 14px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     gap: 10px;
     font-size: 13px;
     font-weight: 500;
-    transition: color 0.1s, background 0.1s;
+    position: relative;
+    border-left: 3px solid transparent;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-item:hover {
-    color: #aaa;
-    background: rgba(255, 255, 255, 0.04);
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(4px);
+    border-left-color: rgba(255, 255, 255, 0.4);
 }
 
 .nav-item.active {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.07);
+    color: #ffffff;
+    background: rgba(181, 47, 50, 0.25);
+    border-left-color: var(--primary, #b52f32);
+    font-weight: 700;
 }
 
 .nav-item.active::before {
@@ -582,9 +596,22 @@ textarea {
 
 .dashboard-grid {
     display: grid;
-    grid-template-columns: 1.6fr 1fr;
+    grid-template-columns: 1.4fr 1fr 1fr;
     gap: 16px;
     margin-bottom: 16px;
+    align-items: stretch;
+}
+
+@media (max-width: 1100px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 700px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .panel {
@@ -624,15 +651,46 @@ textarea {
     cursor: pointer;
 }
 
+.chart-pill-group {
+    display: inline-flex;
+    background: #f1f5f9;
+    padding: 2px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+}
+
+.chart-pill {
+    background: transparent;
+    border: none;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+}
+
+.chart-pill:hover {
+    color: #1e293b;
+}
+
+.chart-pill.active {
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
 .chart-panel {
     display: flex;
     flex-direction: column;
 }
 
 .chart-container {
-    flex: 1;
-    min-height: 340px;
-    padding: 16px;
+    height: 250px;
+    max-height: 270px;
+    padding: 12px 16px 8px;
     position: relative;
 }
 
@@ -824,7 +882,8 @@ tbody tr:hover {
     color: var(--blue);
 }
 
-.completed-badge {
+.completed-badge,
+.complete-badge {
     background: #eefff4;
     color: var(--green);
 }
@@ -839,6 +898,18 @@ tbody tr:hover {
     color: var(--red);
 }
 
+.expired-badge {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #cbd5e1;
+}
+
+.cancelled-badge {
+    background: #f3f4f6;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+}
+
 .progress-cell {
     display: flex;
     align-items: center;
@@ -847,21 +918,41 @@ tbody tr:hover {
 
 .progress-bar {
     width: 60px;
-    height: 4px;
-    background: #eee;
-    border-radius: 2px;
+    height: 5px;
+    background: #e2e8f0;
+    border-radius: 3px;
     overflow: hidden;
 }
 
 .progress-bar div {
     height: 100%;
-    background: var(--blue);
-    border-radius: 2px;
+    border-radius: 3px;
+    background: #2563eb;
+    transition: width 0.4s ease, background 0.4s ease;
 }
 
-.progress-bar .complete { background: var(--green); }
-.progress-bar .pending { background: var(--orange); }
-.progress-bar .overdue { background: var(--red); }
+/* Percentage-based progress bar colors */
+.progress-bar .progress-red,
+.progress-bar div.progress-red    { background: #ef4444; }
+
+.progress-bar .progress-orange,
+.progress-bar div.progress-orange { background: #f97316; }
+
+.progress-bar .progress-gold,
+.progress-bar div.progress-gold   { background: #eab308; }
+
+.progress-bar .progress-green,
+.progress-bar div.progress-green  { background: #22c55e; }
+
+/* Legacy fallbacks */
+.progress-bar .complete,
+.progress-bar div.complete { background: #22c55e; }
+
+.progress-bar .pending,
+.progress-bar div.pending  { background: #f97316; }
+
+.progress-bar .overdue,
+.progress-bar div.overdue  { background: #ef4444; }
 
 .progress-cell span {
     font-size: 10px;
@@ -875,6 +966,8 @@ tbody tr:hover {
 
 .activity-list {
     padding: 6px 18px 12px;
+    max-height: 250px;
+    overflow-y: auto;
 }
 
 .activity {
@@ -1166,15 +1259,16 @@ footer {
 }
 
 .access-mark {
-    width: 160px;
-    height: 80px;
+    width: 100px;
+    height: 100px;
     margin: 0 auto 16px;
-    display: grid;
-    place-items: center;
-    border-radius: 6px;
-    color: white;
-    font-weight: 800;
-    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #ffffff;
+    padding: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--border, #e2e8f0);
 }
 
 .access-shell h1 {

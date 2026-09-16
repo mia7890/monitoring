@@ -22,9 +22,12 @@
     foreach ($apptsByDay as $day => $appts) {
         foreach ($appts as $a) {
             $apptsByDayJson[$day][] = [
-                'user_name' => $a->user_name ?? ($a->fae->name ?? 'User'),
-                'reason'    => $a->reason,
-                'status'    => $a->status,
+                'user_name'  => $a->user_name ?? ($a->fae->name ?? 'User'),
+                'start_time' => $a->start_time,
+                'end_time'   => $a->end_time,
+                'time_slot'  => $a->time_slot,
+                'reason'     => $a->reason,
+                'status'     => $a->status,
             ];
         }
     }
@@ -107,8 +110,12 @@
         }
 
         .landing-logo img {
-            width: 34px;
-            height: 34px;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #ffffff;
+            padding: 3px;
+            border: 1px solid #e2e8f0;
             object-fit: contain;
         }
 
@@ -153,7 +160,7 @@
 
         .landing-shell .cal-layout {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 330px;
+            grid-template-columns: minmax(0, 1fr) 280px;
             gap: 14px;
             flex: 1 1 auto;
             min-height: 0;
@@ -393,7 +400,7 @@
         }
 
         /* ── Responsive rules ───────────────────────────────── */
-        @media (max-width: 1024px), (max-height: 640px) {
+        @media (max-width: 860px), (max-height: 500px) {
             html, body {
                 overflow-y: auto;
                 height: auto;
@@ -455,11 +462,8 @@
                     Sign out
                 </a>
             @else
-                <a href="{{ route('access') }}" class="outline-button btn-sm" style="text-decoration:none;">
-                    FAE Access
-                </a>
                 <a href="{{ route('access') }}" class="primary-button btn-sm" style="text-decoration:none;">
-                    Supervisor Sign In
+                    Open Workspace Portal
                 </a>
             @endif
         </div>
@@ -571,8 +575,8 @@
                                                 $apptClass = ($aData->status === 'rejected') ? 'ev-overdue' : (($aData->status === 'accepted') ? 'ev-completed' : 'ev-appt');
                                             @endphp
                                             <div class="cal-event {{ $apptClass }}"
-                                                 title="Appointment: {{ $aData->reason }} (Status: {{ ucfirst($aData->status) }})">
-                                                Appt: {{ mb_strimwidth($aData->reason, 0, 12, '...') }}
+                                                 title="Appointment: {{ $aData->time_slot ? '[' . $aData->time_slot . '] ' : '' }}{{ $aData->reason }} (Status: {{ ucfirst($aData->status) }})">
+                                                Appt: {{ $aData->time_slot ? $aData->time_slot . ' ' : '' }}{{ mb_strimwidth($aData->reason, 0, 10, '...') }}
                                             </div>
                                         @endforeach
                                     </div>
@@ -587,23 +591,7 @@
             <!-- RIGHT: WIREFRAME-ALIGNED SIDEBAR -->
             <div class="cal-side">
 
-                <!-- 1. TOP ROW: TOTAL TASK | IN PROGRES | COMPLETED -->
-                <div class="wireframe-kpi-row">
-                    <div class="wireframe-kpi-card kpi-total">
-                        <strong>{{ $totalTasks }}</strong>
-                        <span>TOTAL TASK</span>
-                    </div>
-                    <div class="wireframe-kpi-card kpi-progress">
-                        <strong>{{ $totalInProgressTasks }}</strong>
-                        <span>IN PROGRES</span>
-                    </div>
-                    <div class="wireframe-kpi-card kpi-completed">
-                        <strong>{{ $totalCompletedTasks }}</strong>
-                        <span>COMPLETED</span>
-                    </div>
-                </div>
-
-                <!-- 2. SCHEDULE GUIDE AND STATUS -->
+                <!-- 1. SCHEDULE GUIDE AND STATUS -->
                 <div class="wireframe-panel">
                     <h3>SCHEDULE GUIDE AND STATUS</h3>
                     <p style="font-size:10.5px; color:var(--text-light); line-height:1.35; margin:0 0 8px 0;">
@@ -646,10 +634,26 @@
                     @if($upcomingEvents->count() > 0)
                         <div style="display:flex; flex-direction:column; gap:5px;">
                             @foreach ($upcomingEvents->take(4) as $ev)
+                                @php 
+                                    $catColor = match($ev->category ?? 'other') {
+                                        'busy' => '#ef4444',
+                                        'meeting' => '#8b5cf6',
+                                        'reminder' => '#2563eb',
+                                        default => '#ef4444'
+                                    };
+                                @endphp
                                 <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:5px 8px; border-radius:6px; border:1px solid var(--border);">
                                     <div>
-                                        <strong style="font-size:10.5px; display:block; color:var(--text);">{{ $ev->title }}</strong>
-                                        <small style="color:var(--text-light); font-size:9.5px;">{{ \Carbon\Carbon::parse($ev->event_date)->format('M d, Y') }}</small>
+                                        <strong style="font-size:10.5px; display:flex; align-items:center; gap:5px; color:var(--text);">
+                                            <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:{{ $catColor }};"></span>
+                                            {{ $ev->title }}
+                                        </strong>
+                                        <small style="color:var(--text-light); font-size:9.5px;">
+                                            {{ \Carbon\Carbon::parse($ev->event_date)->format('M d, Y') }}
+                                            @if(!empty($ev->end_date) && \Carbon\Carbon::parse($ev->event_date)->format('Y-m-d') !== \Carbon\Carbon::parse($ev->end_date)->format('Y-m-d'))
+                                                - {{ \Carbon\Carbon::parse($ev->end_date)->format('M d, Y') }}
+                                            @endif
+                                        </small>
                                     </div>
                                     <span class="status-badge muted" style="font-size:8.5px; text-transform:uppercase; padding:1px 4px;">{{ $ev->category }}</span>
                                 </div>
@@ -658,21 +662,6 @@
                     @else
                         <p style="font-size:10.5px; color:var(--text-light); margin:0;">No upcoming events scheduled.</p>
                     @endif
-                </div>
-
-                <!-- 5. WORKSPACE ACCESS -->
-                <div class="wireframe-panel" style="background:linear-gradient(135deg, rgba(181,47,50,0.02) 0%, rgba(37,99,235,0.02) 100%);">
-                    <h3>WORKSPACE ACCESS</h3>
-                    <p style="font-size:10.5px; color:var(--text-light); line-height:1.35; margin:0 0 8px 0;">
-                        Authorized engineers and supervisors can access dedicated tools.
-                    </p>
-                    <div style="display:flex; flex-direction:column; gap:6px;">
-                        @if($role)
-                            <a href="{{ route('dashboard') }}" class="primary-button btn-sm" style="text-decoration:none; text-align:center; font-size:11px; padding:5px 10px;">Go to Dashboard</a>
-                        @else
-                            <a href="{{ route('access') }}" class="primary-button btn-sm" style="text-decoration:none; text-align:center; font-size:11px; padding:5px 10px;">Open Workspace Portal</a>
-                        @endif
-                    </div>
                 </div>
 
             </div>
@@ -776,7 +765,8 @@
                     if (dayAppts.length > 0) {
                         html += '<div style="margin-bottom:14px;"><strong>Appointments:</strong><ul style="margin:6px 0 0 18px; padding:0; font-size:13px; color:var(--text-main);">';
                         dayAppts.forEach(function(a) {
-                            html += '<li style="margin-bottom:4px;"><strong>' + escHtml(a.user_name || 'User') + '</strong>: ' + escHtml(a.reason) + ' [<span style="text-transform:capitalize;">' + escHtml(a.status) + '</span>]</li>';
+                            var slotText = a.time_slot ? ' (' + escHtml(a.time_slot) + ')' : (a.start_time && a.end_time ? ' (' + escHtml(a.start_time) + ' - ' + escHtml(a.end_time) + ')' : '');
+                            html += '<li style="margin-bottom:4px;"><strong>' + escHtml(a.user_name || 'User') + '</strong>' + slotText + ': ' + escHtml(a.reason) + ' [<span style="text-transform:capitalize;">' + escHtml(a.status) + '</span>]</li>';
                         });
                         html += '</ul></div>';
                     }

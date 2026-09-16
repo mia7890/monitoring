@@ -1,3 +1,6 @@
+@php
+    use App\Services\MonitoringAuth;
+@endphp
 @extends('layouts.app')
 
 @section('title', 'Dashboard')
@@ -100,106 +103,117 @@
 
     <!-- ================= CHART & ACTIVITY SECTION ================= -->
     <div class="dashboard-grid">
-        <!-- LINE CHART -->
+        <!-- 1. LINE CHART -->
         <div class="panel chart-panel">
-            <div class="panel-header">
+            <div class="panel-header" style="align-items: center; padding: 12px 18px 10px;">
                 <div>
-                    <h2>Task Progress</h2>
-                    <p>Overall task completion overview</p>
+                    <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                        <h2 style="margin: 0; font-size: 14px; font-weight: 700; color: #0f172a;">Task Progress</h2>
+                        <div style="display: flex; align-items: center; gap: 12px; font-size: 11px; font-weight: 600; color: #334155;">
+                            <span style="display: inline-flex; align-items: center; gap: 5px;">
+                                <span style="width: 8px; height: 8px; border-radius: 50%; background: #2563eb; display: inline-block;"></span>
+                                Completed
+                            </span>
+                            <span style="display: inline-flex; align-items: center; gap: 5px;">
+                                <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+                                Total Tasks
+                            </span>
+                        </div>
+                    </div>
+                    <p id="chartDateRangeSubtext" style="margin: 4px 0 0 0; font-size: 11px; font-weight: 600; color: #475569;">
+                        {{ $progressChartData['week']['subtext'] ?? date('F Y') . ' (Weekly Progress)' }}
+                    </p>
                 </div>
-                <select class="period-select">
-                    <option>This Month</option>
-                    <option>Last Month</option>
-                    <option>This Year</option>
-                </select>
+                <div class="chart-pill-group" id="chartPillGroup">
+                    <button type="button" class="chart-pill" data-period="day">Day</button>
+                    <button type="button" class="chart-pill active" data-period="week">Week</button>
+                    <button type="button" class="chart-pill" data-period="month">Month</button>
+                </div>
             </div>
             <div class="chart-container">
                 <canvas id="progressChart"></canvas>
             </div>
         </div>
 
-        <!-- RIGHT COLUMN: UPCOMING & STATUS DONUT -->
-        <div style="display: flex; flex-direction: column; gap: 20px;">
-            <!-- UPCOMING TO-DO -->
-            <div class="panel activity-panel">
-                <div class="panel-header">
-                    <div>
-                        <h2>Upcoming To-Do</h2>
-                        <p>Due within next 7 days</p>
-                    </div>
-                </div>
-                <div class="activity-list">
-                    @if(empty($upcomingItems))
-                        <div style="text-align:center; padding: 20px; font-size: 10px; color: #6b7280;">No upcoming to-dos for this week.</div>
-                    @else
-                        @foreach($upcomingItems as $item)
-                            @php
-                                $iconClass = match($item['type']) {
-                                    'task'        => 'blue',
-                                    'appointment' => 'purple',
-                                    'event'       => ($item['category'] === 'busy' ? 'orange' : ($item['category'] === 'meeting' ? 'blue' : 'green')),
-                                    default       => 'blue'
-                                };
-                                $typeSubtitle = match($item['type']) {
-                                    'task'        => 'Task Due',
-                                    'appointment' => ($item['category'] === 'accepted' ? 'Confirmed Appointment' : 'Appointment Request'),
-                                    'event'       => match($item['category']) {
-                                        'meeting'  => 'Admin Meeting',
-                                        'busy'     => 'Busy / Unavailable',
-                                        'reminder' => 'Reminder',
-                                        default    => 'Admin Event'
-                                    },
-                                    default       => 'Upcoming Event'
-                                };
-                            @endphp
-                            <div class="activity">
-                                <div class="activity-icon {{ $iconClass }}">
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                                </div>
-                                <div class="activity-content">
-                                    <strong>{{ $item['title'] }}</strong>
-                                    <span>{{ $typeSubtitle }}</span>
-                                    <small>{{ date('M d, Y', strtotime($item['date'])) }}</small>
-                                </div>
-                            </div>
-                        @endforeach
-                    @endif
+        <!-- 2. STATUS DONUT PANEL -->
+        <div class="panel status-panel">
+            <div class="panel-header">
+                <div>
+                    <h2>Task Status</h2>
+                    <p>Current task distribution</p>
                 </div>
             </div>
+            <div class="donut-container">
+                <canvas id="statusChart"></canvas>
+                <div class="donut-center">
+                    <strong>{{ $totalTasks }}</strong>
+                    <span>Total Tasks</span>
+                </div>
+            </div>
+            <div class="status-list">
+                <div class="status-item">
+                    <div><span class="legend green"></span>Completed</div>
+                    <strong>{{ $completedTasks }}</strong>
+                </div>
+                <div class="status-item">
+                    <div><span class="legend blue"></span>In Progress</div>
+                    <strong>{{ $inProgressTasks }}</strong>
+                </div>
+                <div class="status-item">
+                    <div><span class="legend orange"></span>Pending</div>
+                    <strong>{{ $pendingTasks }}</strong>
+                </div>
+                <div class="status-item">
+                    <div><span class="legend red"></span>Overdue</div>
+                    <strong>{{ $overdueTasks }}</strong>
+                </div>
+            </div>
+        </div>
 
-            <!-- STATUS DONUT PANEL -->
-            <div class="panel status-panel">
-                <div class="panel-header">
-                    <div>
-                        <h2>Task Status</h2>
-                        <p>Current task distribution</p>
-                    </div>
+        <!-- 3. UPCOMING TO-DO -->
+        <div class="panel activity-panel">
+            <div class="panel-header">
+                <div>
+                    <h2>Upcoming To-Do</h2>
+                    <p>Due within next 7 days</p>
                 </div>
-                <div class="donut-container">
-                    <canvas id="statusChart"></canvas>
-                    <div class="donut-center">
-                        <strong>{{ $totalTasks }}</strong>
-                        <span>Total Tasks</span>
-                    </div>
-                </div>
-                <div class="status-list">
-                    <div class="status-item">
-                        <div><span class="legend green"></span>Completed</div>
-                        <strong>{{ $completedTasks }}</strong>
-                    </div>
-                    <div class="status-item">
-                        <div><span class="legend blue"></span>In Progress</div>
-                        <strong>{{ $inProgressTasks }}</strong>
-                    </div>
-                    <div class="status-item">
-                        <div><span class="legend orange"></span>Pending</div>
-                        <strong>{{ $pendingTasks }}</strong>
-                    </div>
-                    <div class="status-item">
-                        <div><span class="legend red"></span>Overdue</div>
-                        <strong>{{ $overdueTasks }}</strong>
-                    </div>
-                </div>
+            </div>
+            <div class="activity-list">
+                @if(empty($upcomingItems))
+                    <div style="text-align:center; padding: 20px; font-size: 10px; color: #6b7280;">No upcoming to-dos for this week.</div>
+                @else
+                    @foreach($upcomingItems as $item)
+                        @php
+                            $iconClass = match($item['type']) {
+                                'task'        => 'blue',
+                                'appointment' => 'purple',
+                                'event'       => ($item['category'] === 'busy' ? 'orange' : ($item['category'] === 'meeting' ? 'blue' : 'green')),
+                                default       => 'blue'
+                            };
+                            $typeSubtitle = match($item['type']) {
+                                'task'        => 'Task Due',
+                                'appointment' => ($item['category'] === 'accepted' ? 'Confirmed Appointment' : 'Appointment Request'),
+                                'event'       => match($item['category']) {
+                                    'meeting'  => 'Admin Meeting',
+                                    'busy'     => 'Busy / Unavailable',
+                                    'reminder' => 'Reminder',
+                                    default    => 'Admin Event'
+                                },
+                                default       => 'Upcoming Event'
+                            };
+                        @endphp
+                        <div class="activity">
+                            <div class="activity-icon {{ $iconClass }}">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            </div>
+                            <div class="activity-content">
+                                <strong>{{ $item['title'] }}</strong>
+                                <span>{{ $typeSubtitle }}</span>
+                                <small>{{ date('M d, Y', strtotime($item['date'])) }}{{ !empty($item['time_slot']) ? ' • ' . $item['time_slot'] : '' }}</small>
+                            </div>
+                        </div>
+                    @endforeach
+                @endif
             </div>
         </div>
     </div>
@@ -236,7 +250,8 @@
                             $rawStatus = $row->status;
                             $normalizedStatus = strtolower(str_replace(' ', '', $rawStatus));
                             $badgeClass = ($normalizedStatus === 'inprogress') ? 'progress-badge' : $normalizedStatus . '-badge';
-                            $barClass = ($normalizedStatus === 'completed') ? 'complete' : (($normalizedStatus === 'inprogress') ? '' : $normalizedStatus);
+                            $progressPct = (int)($row->progress ?? 0);
+                            $barClass = $progressPct <= 25 ? 'progress-red' : ($progressPct <= 50 ? 'progress-orange' : ($progressPct <= 75 ? 'progress-gold' : 'progress-green'));
                             $avatarColors = ['avatar-blue', 'avatar-purple', 'avatar-orange', 'avatar-green'];
                             $avatarColor = $avatarColors[$row->id % count($avatarColors)];
                             $nameParts = explode(' ', trim($row->fae->name ?? 'Unassigned'));
@@ -430,62 +445,189 @@
 
 @push('scripts')
 <script>
+    var isGoogleConnected = @json(\App\Services\MonitoringAuth::currentGoogleConnected());
+
     // Task Progress Line Chart
     const progressCanvas = document.getElementById("progressChart");
-    if (progressCanvas) {
-        new Chart(progressCanvas, {
+    const chartAllData = @json($progressChartData ?? null);
+
+    if (progressCanvas && chartAllData) {
+        const ctx = progressCanvas.getContext("2d");
+
+        // Subtle gradient fills matching the reference image
+        const blueGradient = ctx.createLinearGradient(0, 0, 0, 260);
+        blueGradient.addColorStop(0, "rgba(37, 99, 235, 0.12)");
+        blueGradient.addColorStop(1, "rgba(37, 99, 235, 0.00)");
+
+        const greenGradient = ctx.createLinearGradient(0, 0, 0, 260);
+        greenGradient.addColorStop(0, "rgba(16, 185, 129, 0.10)");
+        greenGradient.addColorStop(1, "rgba(16, 185, 129, 0.00)");
+
+        const initialData = chartAllData.week || chartAllData.this_month;
+        const maxTotal = Math.max.apply(null, initialData.total.concat([5]));
+
+        // Vertical Guide Line Plugin on hover
+        const verticalHoverLinePlugin = {
+            id: 'verticalHoverLine',
+            afterDraw: (chart) => {
+                if (chart.tooltip && chart.tooltip.getActiveElements && chart.tooltip.getActiveElements().length) {
+                    const activePoint = chart.tooltip.getActiveElements()[0];
+                    const chartCtx = chart.ctx;
+                    const x = activePoint.element.x;
+                    const topY = chart.scales.y.top;
+                    const bottomY = chart.scales.y.bottom;
+
+                    chartCtx.save();
+                    chartCtx.beginPath();
+                    chartCtx.moveTo(x, topY);
+                    chartCtx.lineTo(x, bottomY);
+                    chartCtx.lineWidth = 1.5;
+                    chartCtx.strokeStyle = '#2563eb';
+                    chartCtx.stroke();
+                    chartCtx.restore();
+                }
+            }
+        };
+
+        const progressChart = new Chart(progressCanvas, {
             type: "line",
             data: {
-                labels: ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5", "Week 6"],
+                labels: initialData.labels,
                 datasets: [
                     {
                         label: "Completed Tasks",
-                        data: [18, 27, 35, 42, 48, {{ $completedTasks }}],
+                        data: initialData.completed,
                         borderColor: "#2563eb",
-                        backgroundColor: "rgba(37, 99, 235, 0.08)",
+                        backgroundColor: blueGradient,
                         borderWidth: 2,
                         fill: true,
-                        tension: 0.4,
-                        pointRadius: 3,
-                        pointHoverRadius: 5
+                        tension: 0.15,
+                        pointRadius: 3.5,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: "#ffffff",
+                        pointBorderColor: "#2563eb",
+                        pointBorderWidth: 2,
+                        pointHoverBackgroundColor: "#2563eb",
+                        pointHoverBorderColor: "#ffffff",
+                        pointHoverBorderWidth: 2
                     },
                     {
                         label: "Total Tasks",
-                        data: [35, 48, 58, 67, 76, {{ $totalTasks }}],
-                        borderColor: "#d1d5db",
+                        data: initialData.total,
+                        borderColor: "#10b981",
+                        backgroundColor: greenGradient,
                         borderWidth: 2,
-                        borderDash: [5, 5],
-                        fill: false,
-                        tension: 0.4,
-                        pointRadius: 2
+                        fill: true,
+                        tension: 0.15,
+                        pointRadius: 3.5,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: "#ffffff",
+                        pointBorderColor: "#10b981",
+                        pointBorderWidth: 2,
+                        pointHoverBackgroundColor: "#10b981",
+                        pointHoverBorderColor: "#ffffff",
+                        pointHoverBorderWidth: 2
                     }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
                 plugins: {
                     legend: {
-                        position: "bottom",
-                        labels: {
-                            usePointStyle: true,
-                            boxWidth: 6,
-                            font: { size: 9 }
+                        display: false
+                    },
+                    tooltip: {
+                        enabled: true,
+                        backgroundColor: '#ffffff',
+                        titleColor: '#64748b',
+                        bodyColor: '#0f172a',
+                        borderColor: '#e2e8f0',
+                        borderWidth: 1,
+                        padding: 10,
+                        cornerRadius: 8,
+                        boxWidth: 8,
+                        boxHeight: 8,
+                        boxPadding: 4,
+                        usePointStyle: true,
+                        titleFont: { size: 10, weight: '700' },
+                        bodyFont: { size: 11, weight: '600' },
+                        callbacks: {
+                            title: function(items) {
+                                if (!items.length) return '';
+                                return items[0].label;
+                            },
+                            label: function(context) {
+                                const label = context.dataset.label || '';
+                                const val = context.parsed.y;
+                                return ' ' + label + ': ' + val;
+                            },
+                            afterBody: function(contexts) {
+                                if (contexts.length >= 2) {
+                                    const completed = contexts[0].parsed.y;
+                                    const total = contexts[1].parsed.y;
+                                    if (total > 0) {
+                                        const rate = Math.round((completed / total) * 100);
+                                        return '\n Rate: ' + rate + '%';
+                                    }
+                                }
+                                return '';
+                            }
                         }
                     }
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
-                        grid: { color: "#f1f3f6" },
-                        ticks: { font: { size: 9 }, color: "#9ca3af" }
+                        suggestedMax: Math.max(maxTotal + 1, 5),
+                        grid: { color: "#f1f5f9", drawBorder: false },
+                        ticks: {
+                            precision: 0,
+                            font: { size: 10 },
+                            color: "#94a3b8",
+                            padding: 8
+                        }
                     },
                     x: {
-                        grid: { display: false },
-                        ticks: { font: { size: 9 }, color: "#9ca3af" }
+                        grid: { display: false, drawBorder: false },
+                        ticks: {
+                            font: { size: 10, weight: '500' },
+                            color: "#94a3b8",
+                            padding: 8
+                        }
                     }
                 }
-            }
+            },
+            plugins: [verticalHoverLinePlugin]
+        });
+
+        const pillButtons = document.querySelectorAll('#chartPillGroup .chart-pill');
+        const subtextEl = document.getElementById('chartDateRangeSubtext');
+
+        pillButtons.forEach(function(pill) {
+            pill.addEventListener('click', function() {
+                pillButtons.forEach(function(p) { p.classList.remove('active'); });
+                this.classList.add('active');
+
+                const periodKey = this.getAttribute('data-period');
+                const periodData = chartAllData[periodKey];
+                if (periodData) {
+                    progressChart.data.labels = periodData.labels;
+                    progressChart.data.datasets[0].data = periodData.completed;
+                    progressChart.data.datasets[1].data = periodData.total;
+                    const newMax = Math.max.apply(null, periodData.total.concat([5]));
+                    progressChart.options.scales.y.suggestedMax = Math.max(newMax + 1, 5);
+                    progressChart.update();
+
+                    if (subtextEl && periodData.subtext) {
+                        subtextEl.textContent = periodData.subtext;
+                    }
+                }
+            });
         });
     }
 
@@ -554,9 +696,10 @@
     });
 
     function escapeHtml(text) {
-        if (!text) return '';
+        if (text === null || text === undefined) return '';
+        const str = typeof text === 'string' ? text : String(text);
         const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        return str.replace(/[&<>"']/g, function(m) { return map[m]; });
     }
 
     function formatDate(dateStr) {
@@ -593,7 +736,11 @@
                     document.getElementById("reportModalDeadline").textContent = t.deadline || '—';
 
                     const pct = parseInt(t.progress) || 0;
-                    document.getElementById("reportModalProgressFill").style.width = pct + '%';
+                    const fillEl = document.getElementById("reportModalProgressFill");
+                    if (fillEl) {
+                        fillEl.style.width = pct + '%';
+                        fillEl.className = pct <= 25 ? 'progress-red' : (pct <= 50 ? 'progress-orange' : (pct <= 75 ? 'progress-gold' : 'progress-green'));
+                    }
                     document.getElementById("reportModalProgressPct").textContent = pct + '%';
 
                     if (t.description) {
@@ -667,10 +814,38 @@
                                 const ext = u.attachment.split('.').pop().toLowerCase();
                                 const isImg = ['jpg','jpeg','png','gif','webp','bmp'].includes(ext);
                                 const assetUrl = '{{ url('files') }}/' + u.attachment;
+                                const driveUploadUrl = '{{ route('google.uploadDrive') }}';
+                                const csrfToken = '{{ csrf_token() }}';
+
+                                let driveBtn = '';
+                                if (isGoogleConnected) {
+                                    driveBtn = '<form method="POST" action="' + driveUploadUrl + '" style="display:inline; margin-left:6px;">' +
+                                                   '<input type="hidden" name="_token" value="' + csrfToken + '">' +
+                                                   '<input type="hidden" name="filepath" value="' + escapeHtml(u.attachment) + '">' +
+                                                   '<input type="hidden" name="author_name" value="' + escapeHtml(u.author_name || '') + '">' +
+                                                   '<input type="hidden" name="author_role" value="' + escapeHtml(authorBadge || '') + '">' +
+                                                   '<input type="hidden" name="message" value="' + escapeHtml(u.message || '') + '">' +
+                                                   '<input type="hidden" name="created_at" value="' + escapeHtml(formatDate(u.created_at) || '') + '">' +
+                                                   '<input type="hidden" name="progress" value="' + (u.progress_at_update !== null && u.progress_at_update !== undefined ? parseInt(u.progress_at_update) + '%' : '') + '">' +
+                                                   '<input type="hidden" name="status" value="' + escapeHtml(u.status_at_update || '') + '">' +
+                                                   '<input type="hidden" name="task_name" value="' + escapeHtml((t && t.task_name ? t.task_name : '') || '') + '">' +
+                                                   '<button type="submit" class="outline-button btn-sm" title="Save this message context & attachment to your connected Google Drive" style="display:inline-flex; align-items:center; gap:4px;">' +
+                                                       '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>' +
+                                                       'Save to Drive' +
+                                                   '</button>' +
+                                               '</form>';
+                                }
+
                                 if (isImg) {
-                                    html += '<div style="margin-top:10px;"><a href="' + assetUrl + '" target="_blank"><img src="' + assetUrl + '" alt="Attachment preview" style="max-height:150px; border-radius:6px; border:1px solid #ddd; display:block;"></a></div>';
+                                    html += '<div style="margin-top:10px;">' +
+                                                '<a href="' + assetUrl + '" target="_blank"><img src="' + assetUrl + '" alt="Attachment preview" style="max-height:150px; border-radius:6px; border:1px solid #ddd; display:block; margin-bottom:6px;"></a>' +
+                                                driveBtn +
+                                            '</div>';
                                 } else {
-                                    html += '<div style="margin-top:10px;"><a href="' + assetUrl + '" target="_blank" class="outline-button btn-sm" style="display:inline-flex; align-items:center; gap:4px; text-decoration:none;">Download ' + escapeHtml(u.attachment.split('/').pop()) + '</a></div>';
+                                    html += '<div style="margin-top:10px; display:flex; align-items:center; flex-wrap:wrap; gap:6px;">' +
+                                                '<a href="' + assetUrl + '" target="_blank" class="outline-button btn-sm" style="display:inline-flex; align-items:center; gap:4px; text-decoration:none;">Download ' + escapeHtml(u.attachment.split('/').pop()) + '</a>' +
+                                                driveBtn +
+                                            '</div>';
                                 }
                             }
 
@@ -680,7 +855,8 @@
                     }
                 })
                 .catch(err => {
-                    timelineContainer.innerHTML = '<div class="alert-banner error">Failed to connect to server.</div>';
+                    console.error("Timeline error:", err);
+                    timelineContainer.innerHTML = '<div class="alert-banner error">Failed to load timeline updates.</div>';
                 });
         });
     });

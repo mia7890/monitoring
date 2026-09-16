@@ -51,11 +51,18 @@ return new class extends Migration
 
         // 2. For each unique department, ensure a record exists in departments table
         foreach ($uniqueDepts as $deptName) {
-            DB::table('departments')
-                ->updateOrCreate(
-                    ['department_name' => $deptName],
-                    ['is_active' => true, 'created_at' => now(), 'updated_at' => now()]
-                );
+            $exists = DB::table('departments')
+                ->where('department_name', $deptName)
+                ->exists();
+
+            if (!$exists) {
+                DB::table('departments')->insert([
+                    'department_name' => $deptName,
+                    'is_active' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
         }
 
         // 3. Update fae_users to populate department_id from text value

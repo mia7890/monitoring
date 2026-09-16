@@ -23,10 +23,15 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ route('fae.store') }}" class="fae-add-form">
+        <form method="POST" action="{{ route('fae.store') }}" class="fae-add-form" enctype="multipart/form-data">
             @csrf
             <input class="form-control" name="name" required placeholder="Full name">
-            <input class="form-control" name="fae_code" required placeholder="FAE code (e.g. FAE-001)">
+            <div style="display:flex; gap:6px; align-items:center;">
+                <input class="form-control" id="fae_code_input" name="fae_code" required placeholder="FAE code" style="flex:1; text-transform:uppercase; letter-spacing:1px;">
+                <button type="button" id="btn-generate-code" class="outline-button btn-sm" title="Generate a random secure FAE code" style="white-space:nowrap;">
+                    ⟳ Generate
+                </button>
+            </div>
             <select class="form-control" name="department_id" required>
                 <option value="">Select Department</option>
                 @foreach($departments as $department)
@@ -75,7 +80,8 @@
                                 <strong>{{ $avgProgress }}%</strong>
                             </div>
                             <div class="progress-bar">
-                                <div style="width:{{ $avgProgress }}%;"></div>
+                                @php $faeBarClass = $avgProgress <= 25 ? 'progress-red' : ($avgProgress <= 50 ? 'progress-orange' : ($avgProgress <= 75 ? 'progress-gold' : 'progress-green')); @endphp
+                                <div class="{{ $faeBarClass }}" style="width:{{ $avgProgress }}%;"></div>
                             </div>
                         </div>
                     </div>
@@ -108,3 +114,35 @@
     </footer>
 </section>
 @endsection
+
+@push('scripts')
+<script>
+    // Generates a cryptographically random uppercase alphanumeric code
+    function generateFaeCode(length = 8) {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous chars (0, O, 1, I)
+        const arr = new Uint8Array(length);
+        crypto.getRandomValues(arr);
+        return Array.from(arr, b => chars[b % chars.length]).join('');
+    }
+
+    const codeInput = document.getElementById('fae_code_input');
+    const generateBtn = document.getElementById('btn-generate-code');
+
+    if (codeInput && generateBtn) {
+        // Auto-generate on page load if field is empty
+        if (!codeInput.value.trim()) {
+            codeInput.value = generateFaeCode();
+        }
+
+        generateBtn.addEventListener('click', function () {
+            codeInput.value = generateFaeCode();
+            codeInput.focus();
+        });
+
+        // Force uppercase as user types
+        codeInput.addEventListener('input', function () {
+            this.value = this.value.toUpperCase();
+        });
+    }
+</script>
+@endpush

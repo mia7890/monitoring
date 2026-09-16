@@ -27,7 +27,7 @@ class NotificationService
             foreach ($pendingAppts as $item) {
                 $items[] = [
                     'type' => 'Appointment request',
-                    'title' => $item->reason,
+                    'title' => ($item->time_slot ? '[' . $item->time_slot . '] ' : '') . $item->reason,
                     'date' => $item->appointment_date ? $item->appointment_date->format('Y-m-d') : null,
                 ];
             }

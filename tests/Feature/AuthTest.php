@@ -19,7 +19,7 @@ class AuthTest extends TestCase
         $this->get('/departments')->assertRedirect('/access');
     }
 
-    public function test_admin_login_with_valid_key_creates_admin_session(): void
+    public function test_admin_login_with_valid_key_logs_in_directly(): void
     {
         $response = $this->post('/login', [
             'access_type' => 'admin',
@@ -28,6 +28,7 @@ class AuthTest extends TestCase
 
         $response->assertRedirect('/dashboard');
         $this->assertEquals('admin', MonitoringAuth::role());
+        $this->assertTrue(MonitoringAuth::isAdmin());
     }
 
     public function test_admin_login_with_invalid_key_is_rejected(): void

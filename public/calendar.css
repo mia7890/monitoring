@@ -78,6 +78,32 @@
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
 }
 
+.btn-add-event {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: var(--primary);
+    border: none;
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    gap: 6px;
+}
+
+.btn-add-event:hover {
+    background: var(--primary-dark);
+    box-shadow: 0 4px 12px rgba(181, 47, 50, 0.3);
+    transform: translateY(-1px);
+}
+
+.btn-add-event:active {
+    transform: translateY(0);
+}
+
 
 /* ── Day labels ──────────────────────────────────────────── */
 
@@ -178,7 +204,7 @@
     flex-direction: column;
     gap: 2px;
     margin-top: 2px;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .cal-event {
@@ -190,6 +216,35 @@
     overflow: hidden;
     text-overflow: ellipsis;
     cursor: pointer;
+    position: relative;
+}
+
+/* Multi-day event continuation styling */
+.cal-event.ev-cont-start {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    margin-right: -7px !important;
+    padding-right: 7px !important;
+    z-index: 2;
+}
+
+.cal-event.ev-cont-middle {
+    border-radius: 0 !important;
+    margin-left: -7px !important;
+    margin-right: -7px !important;
+    padding-left: 7px !important;
+    padding-right: 7px !important;
+    border-left-width: 0 !important;
+    z-index: 2;
+}
+
+.cal-event.ev-cont-end {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    margin-left: -7px !important;
+    padding-left: 7px !important;
+    border-left-width: 0 !important;
+    z-index: 2;
 }
 
 .ev-completed {
@@ -215,6 +270,12 @@
 .ev-appt {
     background: #f3e8ff;
     color: #7c3aed;
+}
+
+.ev-expired {
+    background: #f1f5f9;
+    color: #94a3b8;
+    text-decoration: line-through;
 }
 
 .ev-more {
@@ -450,21 +511,150 @@
 }
 
 .google-tools {
-    display: grid;
-    gap: 5px;
-    margin-top: 16px;
-    padding-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 20px;
+    padding-top: 18px;
     border-top: 1px solid var(--border);
-    font-size: 10px;
+    font-size: 11px;
     line-height: 1.4;
 }
 
-.google-tools strong { font-size: 11px; }
-.google-tools span { color: var(--text-light); }
-.google-tools a,
-.google-calendar-link { color: var(--primary); font-weight: 600; text-decoration: none; }
-.google-tools a:hover,
-.google-calendar-link:hover { text-decoration: underline; }
+.google-tools-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.google-tools-header strong {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.google-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 12px;
+}
+
+.google-status-badge.connected {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+}
+
+.google-status-badge.disconnected {
+    background: #fffbeb;
+    color: #b45309;
+    border: 1px solid #fde68a;
+}
+
+.google-tools-desc {
+    color: var(--text-light);
+    font-size: 11px;
+    margin: 0;
+}
+
+.google-cards-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.google-app-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #f8fafc;
+    text-decoration: none;
+    color: var(--text);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    font-size: 11px;
+}
+
+.google-app-card:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.google-app-card-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    width: 100%;
+}
+
+.google-app-card strong {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.google-app-card span {
+    font-size: 9.5px;
+    color: var(--text-light);
+    line-height: 1.25;
+}
+
+.google-app-card .btn-card-action {
+    margin-top: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.google-connect-cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 7px;
+    padding: 9px 12px;
+    color: #374151;
+    font-size: 11px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    margin-top: 4px;
+}
+
+.google-connect-cta:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+    color: #111827;
+}
+
+.google-calendar-link {
+    color: var(--primary);
+    font-weight: 600;
+    text-decoration: none;
+}
+.google-calendar-link:hover {
+    text-decoration: underline;
+}
 
 
 /* ── Month Summary ───────────────────────────────────────── */
@@ -802,3 +992,8 @@
     line-height: 1.3;
 }
 
+/* Admin Events */
+.ev-admin-busy { background: #fee2e2; color: #ef4444; border-left: 2px solid #ef4444; }
+.ev-admin-meeting { background: #f3e8ff; color: #8b5cf6; border-left: 2px solid #8b5cf6; }
+.ev-admin-reminder { background: #eff6ff; color: #2563eb; border-left: 2px solid #2563eb; }
+.ev-admin-other { background: #fee2e2; color: #ef4444; border-left: 2px solid #ef4444; }

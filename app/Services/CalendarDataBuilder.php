@@ -66,14 +66,10 @@ class CalendarDataBuilder
             }
         }
 
-        // Appointments for this month, grouped by day of month
+        // Appointments for this month, grouped by day of month (visible to all FAEs so they see booked slots)
         $apptsQuery = Appointment::with('fae')
             ->whereMonth('appointment_date', $month)
             ->whereYear('appointment_date', $year);
-
-        if ($faeId !== null) {
-            $apptsQuery->where('fae_id', $faeId);
-        }
 
         $apptsByDay = [];
         $bookedDays = [];
@@ -93,23 +89,44 @@ class CalendarDataBuilder
         $adminEventsByDay = [];
         $busyDays = [];
 
-        foreach (AdminEvent::whereMonth('event_date', $month)
-            ->whereYear('event_date', $year)
-            ->orderBy('event_date', 'asc')
-            ->get() as $evt) {
-            if ($evt->event_date) {
-                $day = (int)$evt->event_date->format('j');
-                $adminEventsByDay[$day][] = $evt;
+        $startOfMonth = Carbon::create($year, $month, 1)->startOfDay();
+        $endOfMonth = (clone $startOfMonth)->endOfMonth();
 
-                if ($evt->category === 'busy') {
-                    $busyDays[$day] = true;
-                    $bookedDays[$day] = (object)['status' => 'busy'];
+        $adminEvents = AdminEvent::where(function($query) use ($startOfMonth, $endOfMonth) {
+            $query->whereBetween('event_date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
+                  ->orWhere(function($q2) use ($startOfMonth, $endOfMonth) {
+                      $q2->whereNotNull('end_date')
+                         ->where('event_date', '<=', $endOfMonth->format('Y-m-d'))
+                         ->where('end_date', '>=', $startOfMonth->format('Y-m-d'));
+                  });
+        })->orderBy('event_date', 'asc')->get();
+
+        foreach ($adminEvents as $evt) {
+            if ($evt->event_date) {
+                $evtStart = clone $evt->event_date;
+                $evtEnd = $evt->end_date ? clone $evt->end_date : clone $evtStart;
+
+                $plotStart = $evtStart->max($startOfMonth);
+                $plotEnd = $evtEnd->min($endOfMonth);
+
+                for ($d = clone $plotStart; $d <= $plotEnd; $d->modify('+1 day')) {
+                    $day = (int)$d->format('j');
+                    $adminEventsByDay[$day][] = $evt;
+
+                    if ($evt->category === 'busy') {
+                        $busyDays[$day] = true;
+                        $bookedDays[$day] = (object)['status' => 'busy'];
+                    }
                 }
             }
         }
 
         // Upcoming schedule
         $upcomingEvents = AdminEvent::where('event_date', '>=', Carbon::today()->format('Y-m-d'))
+            ->orWhere(function($q) {
+                $q->whereNotNull('end_date')
+                  ->where('end_date', '>=', Carbon::today()->format('Y-m-d'));
+            })
             ->orderBy('event_date', 'asc')
             ->take($upcomingEventsTake)
             ->get();

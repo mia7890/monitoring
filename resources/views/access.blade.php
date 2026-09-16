@@ -16,9 +16,9 @@
             gap: 6px;
             padding: 7px 14px;
             border-radius: 6px;
-            background: #ffffff;
+            background: #b52f32;
             border: 1px solid var(--border, #e2e8f0);
-            color: var(--text, #1e293b);
+            color: #ffffff;
             font-size: 12px;
             font-weight: 600;
             text-decoration: none;
@@ -58,6 +58,8 @@
         @endif
 
         <div class="access-grid">
+
+
             <!-- FAE Workspace Form -->
             <form method="POST" action="{{ route('login') }}" class="access-card">
                 @csrf
@@ -80,14 +82,20 @@
                 <label class="form-label" for="admin_key">Admin access key</label>
                 <input class="form-control" id="admin_key" name="admin_key" type="password" required autocomplete="current-password" placeholder="Enter admin key">
                 <button class="primary-button access-button" type="submit">Open admin workspace</button>
+
+                <div style="margin-top: 12px; text-align: right;">
+                    <button type="button" onclick="if(confirm('Send admin access key to registered admin email?')) { document.getElementById('forgotKeyForm').submit(); }" style="background:none; border:none; color:var(--primary, #b52f32); font-size:11px; font-weight:600; cursor:pointer; text-decoration:underline; padding:0;">
+                        Forgot Admin Key?
+                    </button>
+                </div>
+            </form>
+
+            <form id="forgotKeyForm" method="POST" action="{{ route('forgot.admin.key') }}" style="display:none;">
+                @csrf
             </form>
         </div>
 
-        <div style="margin-top: 20px; text-align: center;">
-            <a href="{{ route('landing') }}" style="color:var(--text-secondary); font-size:12px; text-decoration:none; font-weight:500;">
-                ← Back to Home
-            </a>
-        </div>
+    
     </main>
 </body>
 </html>

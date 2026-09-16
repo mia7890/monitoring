@@ -80,6 +80,7 @@ class DashboardController extends Controller
                 'type' => 'appointment',
                 'title' => $a->reason,
                 'date' => $a->appointment_date->format('Y-m-d'),
+                'time_slot' => $a->time_slot,
                 'category' => $a->status,
             ];
         }
@@ -102,6 +103,8 @@ class DashboardController extends Controller
 
         $faeList = FaeUser::orderBy('name', 'asc')->get();
 
+        $progressChartData = $this->buildChartData($taskBase);
+
         return view('dashboard', compact(
             'isAdmin',
             'currentFaeId',
@@ -113,7 +116,129 @@ class DashboardController extends Controller
             'overdueTasks',
             'tasks',
             'upcomingItems',
-            'faeList'
+            'faeList',
+            'progressChartData'
         ));
+    }
+
+    /**
+     * Build chart datasets for Day (14 days), Week (Month weeks), and Month (Year months).
+     */
+    private function buildChartData($taskBase): array
+    {
+        $now = Carbon::now();
+
+        // 1. DAY MODE: Last 14 days
+        $dayLabels = [];
+        $dayCompleted = [];
+        $dayTotal = [];
+        for ($i = 13; $i >= 0; $i--) {
+            $date = $now->copy()->subDays($i);
+            $dayLabels[] = $date->format('d.m');
+            $cutoff = $date->copy()->endOfDay();
+
+            $total = (clone $taskBase)
+                ->where(function ($q) use ($cutoff) {
+                    $q->whereNull('created_at')
+                      ->orWhere('created_at', '<=', $cutoff);
+                })->count();
+
+            $completed = (clone $taskBase)
+                ->where('status', 'Completed')
+                ->where(function ($q) use ($cutoff) {
+                    $q->whereNull('updated_at')
+                      ->orWhere('updated_at', '<=', $cutoff);
+                })->count();
+
+            $dayTotal[] = $total;
+            $dayCompleted[] = $completed;
+        }
+
+        // 2. WEEK MODE: Weeks of this month
+        $daysThisMonth = $now->daysInMonth;
+        $weekLabels = [];
+        $weekCompleted = [];
+        $weekTotal = [];
+
+        $weeks = [
+            ['name' => 'Week 1', 'end' => 7],
+            ['name' => 'Week 2', 'end' => 14],
+            ['name' => 'Week 3', 'end' => 21],
+            ['name' => 'Week 4', 'end' => 28],
+        ];
+        if ($daysThisMonth > 28) {
+            $weeks[] = ['name' => 'Week 5', 'end' => $daysThisMonth];
+        }
+
+        foreach ($weeks as $w) {
+            $weekLabels[] = $w['name'];
+            $cutoff = Carbon::create($now->year, $now->month, min($w['end'], $daysThisMonth))->endOfDay();
+            $effectiveCutoff = $cutoff->isFuture() ? $now->copy()->endOfDay() : $cutoff;
+
+            $total = (clone $taskBase)
+                ->where(function ($q) use ($effectiveCutoff) {
+                    $q->whereNull('created_at')
+                      ->orWhere('created_at', '<=', $effectiveCutoff);
+                })->count();
+
+            $completed = (clone $taskBase)
+                ->where('status', 'Completed')
+                ->where(function ($q) use ($effectiveCutoff) {
+                    $q->whereNull('updated_at')
+                      ->orWhere('updated_at', '<=', $effectiveCutoff);
+                })->count();
+
+            $weekTotal[] = $total;
+            $weekCompleted[] = $completed;
+        }
+
+        // 3. MONTH MODE: 12 Months of this year
+        $monthLabels = [];
+        $monthCompleted = [];
+        $monthTotal = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $mDate = Carbon::create($now->year, $m, 1);
+            $monthLabels[] = $mDate->format('M');
+
+            $monthEnd = $mDate->copy()->endOfMonth();
+            $effectiveCutoff = $monthEnd->isFuture() ? $now->copy()->endOfDay() : $monthEnd;
+
+            $total = (clone $taskBase)
+                ->where(function ($q) use ($effectiveCutoff) {
+                    $q->whereNull('created_at')
+                      ->orWhere('created_at', '<=', $effectiveCutoff);
+                })->count();
+
+            $completed = (clone $taskBase)
+                ->where('status', 'Completed')
+                ->where(function ($q) use ($effectiveCutoff) {
+                    $q->whereNull('updated_at')
+                      ->orWhere('updated_at', '<=', $effectiveCutoff);
+                })->count();
+
+            $monthTotal[] = $total;
+            $monthCompleted[] = $completed;
+        }
+
+        return [
+            'day' => [
+                'labels' => $dayLabels,
+                'completed' => $dayCompleted,
+                'total' => $dayTotal,
+                'subtext' => $now->copy()->subDays(13)->format('M d') . ' – ' . $now->format('M d, Y'),
+            ],
+            'week' => [
+                'labels' => $weekLabels,
+                'completed' => $weekCompleted,
+                'total' => $weekTotal,
+                'subtext' => $now->format('F Y') . ' (Weekly Progress)',
+            ],
+            'month' => [
+                'labels' => $monthLabels,
+                'completed' => $monthCompleted,
+                'total' => $monthTotal,
+                'subtext' => 'Jan – Dec ' . $now->format('Y') . ' (Monthly Overview)',
+            ],
+        ];
     }
 }

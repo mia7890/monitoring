@@ -6,8 +6,10 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\FaeController;
 use App\Http\Controllers\FileController;
+use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TaskController;
 use App\Services\MonitoringAuth;
 use Illuminate\Support\Facades\Route;
@@ -19,6 +21,7 @@ Route::get('/', [LandingController::class, 'index'])->name('landing');
 Route::get('/access', [AuthController::class, 'showAccess'])->name('access');
 Route::post('/login', [AuthController::class, 'login'])->name('login')->middleware('throttle:monitoring-login');
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::post('/forgot-admin-key', [AuthController::class, 'forgotKey'])->name('forgot.admin.key')->middleware('throttle:3,5');
 Route::get('/fae-link/{code}', [AuthController::class, 'directFaeLink'])->name('fae.link')->middleware('throttle:monitoring-login');
 Route::get('/fae.php', function (\Illuminate\Http\Request $request) {
     if ($request->has('code')) {
@@ -26,6 +29,10 @@ Route::get('/fae.php', function (\Illuminate\Http\Request $request) {
     }
     return redirect()->route('fae.index');
 });
+
+// Google OAuth public routes
+Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('google.redirect');
+Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('google.callback');
 
 // Authenticated monitoring routes
 Route::middleware(['auth.monitoring'])->group(function () {
@@ -46,6 +53,14 @@ Route::middleware(['auth.monitoring'])->group(function () {
     // Calendar
     Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
     Route::post('/calendar/book', [CalendarController::class, 'bookAppointment'])->name('calendar.book');
+    Route::post('/calendar/cancel', [CalendarController::class, 'cancelAppointment'])->name('calendar.cancelAppointment');
+    Route::post('/calendar/appointment/delete', [CalendarController::class, 'destroyAppointment'])->name('calendar.appointment.destroy');
+
+    // Google actions for authenticated users (Admin or FAE)
+    Route::post('/auth/google/disconnect', [GoogleAuthController::class, 'disconnect'])->name('google.disconnect');
+    Route::post('/google/sync-calendar', [GoogleAuthController::class, 'syncCalendar'])->name('google.syncCalendar');
+    Route::post('/google/test-gmail', [GoogleAuthController::class, 'testGmail'])->name('google.testGmail');
+    Route::post('/google/upload-drive', [GoogleAuthController::class, 'uploadDrive'])->name('google.uploadDrive');
 
     // Admin only routes
     Route::middleware(['admin.monitoring'])->group(function () {
@@ -70,5 +85,12 @@ Route::middleware(['auth.monitoring'])->group(function () {
         Route::post('/calendar/appointment-status', [CalendarController::class, 'updateAppointmentStatus'])->name('calendar.updateAppointmentStatus');
         Route::post('/calendar/events', [CalendarController::class, 'storeEvent'])->name('calendar.events.store');
         Route::post('/calendar/events/delete', [CalendarController::class, 'destroyEvent'])->name('calendar.events.destroy');
+
+
+        // Settings
+        Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+        Route::post('/settings/update-key', [SettingsController::class, 'updateKey'])->name('settings.updateKey');
+        Route::post('/settings/update-google-credentials', [SettingsController::class, 'updateGoogleCredentials'])->name('settings.updateGoogleCredentials');
     });
 });
+

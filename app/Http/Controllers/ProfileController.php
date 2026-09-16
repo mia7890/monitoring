@@ -12,7 +12,7 @@ class ProfileController extends Controller
     public function updatePhoto(Request $request)
     {
         $request->validate([
-            'profile_image' => 'required|image|mimes:jpg,jpeg,png,gif,webp|max:2048',
+            'profile_image' => 'required|image|mimes:jpg,jpeg,png,gif,webp|max:10240',
         ]);
 
         $isAdmin = MonitoringAuth::isAdmin();

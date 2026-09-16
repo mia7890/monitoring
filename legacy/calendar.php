@@ -626,9 +626,15 @@ $appBase = rtrim($scriptDir, '/');
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Date <span class="req">*</span></label>
+                        <label class="form-label">Start Date <span class="req">*</span></label>
                         <input type="date" name="event_date" id="addEventModalDate" class="form-control" required value="<?= $today ?>">
                     </div>
+                    <div class="form-group">
+                        <label class="form-label">End Date</label>
+                        <input type="date" name="end_date" id="addEventModalEndDate" class="form-control" value="<?= $today ?>">
+                    </div>
+                </div>
+                <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Category</label>
                         <select name="event_category" class="form-select">
