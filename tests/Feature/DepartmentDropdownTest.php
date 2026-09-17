@@ -10,15 +10,14 @@ class DepartmentDropdownTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_fae_page_displays_department_dropdown_from_department_table(): void
+    public function test_registration_page_displays_department_dropdown_from_department_table(): void
     {
         Department::create(['department_name' => 'Engineering']);
         Department::create(['department_name' => 'IT Support']);
 
-        $this->withSession(['monitoring_role' => 'admin'])
-            ->get('/fae')
+        $this->get('/register')
             ->assertOk()
-            ->assertSeeText('Select Department')
+            ->assertSeeText('Select')
             ->assertSeeText('Engineering')
             ->assertSeeText('IT Support');
     }

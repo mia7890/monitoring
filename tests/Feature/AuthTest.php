@@ -83,7 +83,7 @@ class AuthTest extends TestCase
 
         $response->assertRedirect();
         $this->assertNull(MonitoringAuth::role());
-        $response->assertSessionHas('error', 'That FAE code was not found.');
+        $response->assertSessionHas('error', 'That Access Code was not found.');
     }
 
     public function test_direct_fae_link_logs_user_in(): void

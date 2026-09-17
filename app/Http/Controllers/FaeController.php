@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ContactApprovedMail;
 use App\Models\Department;
 use App\Models\FaeUser;
 use App\Models\Task;
 use App\Services\UploadService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class FaeController extends Controller
 {
@@ -17,6 +21,7 @@ class FaeController extends Controller
             ->get();
 
         $faeList = FaeUser::with(['tasks', 'department'])
+            ->approved()
             ->orderBy('name', 'asc')
             ->get()
             ->map(function ($fae) {
@@ -28,22 +33,29 @@ class FaeController extends Controller
                 return $fae;
             });
 
-        return view('fae.index', compact('faeList', 'departments'));
+        $pendingList = FaeUser::with('department')
+            ->pending()
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('fae.index', compact('faeList', 'pendingList', 'departments'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'fae_code' => 'required|string|max:100|unique:fae_users,fae_code',
+            'fae_code' => 'nullable|string|max:100|unique:fae_users,fae_code',
             'email' => 'nullable|email|max:255',
-            'department_id' => 'required|exists:departments,id',
+            'department_id' => 'nullable|exists:departments,id',
             'phone' => 'nullable|string|max:100',
             'profile_image' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp|max:2048',
         ]);
 
         $name = trim($request->input('name'));
-        $faeCode = strtoupper(trim($request->input('fae_code')));
+        $faeCode = trim($request->input('fae_code'))
+            ? strtoupper(trim($request->input('fae_code')))
+            : $this->generateUniqueCode();
 
         $profileImagePath = null;
         if ($request->hasFile('profile_image') && $request->file('profile_image')->isValid()) {
@@ -53,13 +65,14 @@ class FaeController extends Controller
         FaeUser::create([
             'name' => $name,
             'fae_code' => $faeCode,
+            'status' => 'approved',
             'email' => $request->input('email') ?: null,
-            'department_id' => $request->input('department_id'),
+            'department_id' => $request->input('department_id') ?: null,
             'phone' => $request->input('phone') ?: null,
             'profile_image' => $profileImagePath,
         ]);
 
-        return redirect()->route('fae.index')->with('success', "FAE '{$name}' ({$faeCode}) was added successfully!");
+        return redirect()->route('fae.index')->with('success', "Contact '{$name}' ({$faeCode}) added successfully!");
     }
 
     public function update(Request $request, FaeUser $fae)
@@ -68,7 +81,7 @@ class FaeController extends Controller
             'name' => 'required|string|max:255',
             'fae_code' => 'required|string|max:100|unique:fae_users,fae_code,' . $fae->id,
             'email' => 'nullable|email|max:255',
-            'department_id' => 'required|exists:departments,id',
+            'department_id' => 'nullable|exists:departments,id',
             'phone' => 'nullable|string|max:100',
             'profile_image' => 'nullable|image|mimes:jpg,jpeg,png,gif,webp|max:2048',
         ]);
@@ -80,7 +93,7 @@ class FaeController extends Controller
             'name' => $name,
             'fae_code' => $faeCode,
             'email' => $request->input('email') ?: null,
-            'department_id' => $request->input('department_id'),
+            'department_id' => $request->input('department_id') ?: null,
             'phone' => $request->input('phone') ?: null,
         ];
 
@@ -94,7 +107,42 @@ class FaeController extends Controller
 
         $fae->update($data);
 
-        return redirect()->route('fae.index')->with('success', "FAE '{$name}' details updated successfully!");
+        return redirect()->route('fae.index')->with('success', "Contact '{$name}' details updated successfully!");
+    }
+
+    public function approve(FaeUser $fae)
+    {
+        if ($fae->isApproved()) {
+            return back()->with('error', "Contact '{$fae->name}' is already approved.");
+        }
+
+        $accessCode = $fae->fae_code ?: $this->generateUniqueCode();
+
+        $fae->update([
+            'status' => 'approved',
+            'fae_code' => $accessCode,
+        ]);
+
+        $emailMsg = '';
+        if ($fae->email) {
+            try {
+                Mail::to($fae->email)->send(new ContactApprovedMail($fae->name, $accessCode));
+                $emailMsg = " Access Code sent via email to {$fae->email}.";
+            } catch (\Throwable $e) {
+                Log::error('Failed to send contact approval email: ' . $e->getMessage());
+                $emailMsg = " Warning: Email sending failed (" . $e->getMessage() . "). Access Code is {$accessCode}.";
+            }
+        }
+
+        return redirect()->route('fae.index')->with('success', "Registration for '{$fae->name}' approved! Assigned Access Code: {$accessCode}.{$emailMsg}");
+    }
+
+    public function reject(FaeUser $fae)
+    {
+        $name = $fae->name;
+        $fae->update(['status' => 'rejected']);
+
+        return redirect()->route('fae.index')->with('success', "Registration for '{$name}' was rejected.");
     }
 
     public function destroy(FaeUser $fae)
@@ -108,6 +156,15 @@ class FaeController extends Controller
 
         $fae->delete();
 
-        return redirect()->route('fae.index')->with('success', "FAE member '{$name}' removed successfully. Assigned tasks were unassigned.");
+        return redirect()->route('fae.index')->with('success', "Contact '{$name}' removed successfully.");
+    }
+
+    private function generateUniqueCode(): string
+    {
+        do {
+            $code = 'CTC-' . strtoupper(Str::random(5));
+        } while (FaeUser::where('fae_code', $code)->exists());
+
+        return $code;
     }
 }

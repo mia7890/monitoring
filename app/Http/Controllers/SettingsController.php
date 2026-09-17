@@ -16,18 +16,9 @@ class SettingsController extends Controller
         $currentKey = MonitoringAuth::adminKey();
         $adminEmail = MonitoringAuth::adminEmail();
 
-        $smtpHost = config('mail.mailers.smtp.host', env('MAIL_HOST', 'N/A'));
-        $smtpPort = config('mail.mailers.smtp.port', env('MAIL_PORT', 'N/A'));
-        $smtpUsername = config('mail.mailers.smtp.username', env('MAIL_USERNAME', 'N/A'));
-        $smtpFromAddress = config('mail.from.address', env('MAIL_FROM_ADDRESS', 'N/A'));
-
         return view('settings.index', compact(
             'currentKey',
-            'adminEmail',
-            'smtpHost',
-            'smtpPort',
-            'smtpUsername',
-            'smtpFromAddress'
+            'adminEmail'
         ));
     }
 

@@ -29,6 +29,10 @@ Route::get('/fae.php', function (\Illuminate\Http\Request $request) {
     return redirect()->route('fae.index');
 });
 
+// Public self-registration
+Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+Route::post('/register', [AuthController::class, 'register'])->name('register.store')->middleware('throttle:10,5');
+
 // Authenticated monitoring routes
 Route::middleware(['auth.monitoring'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -64,11 +68,13 @@ Route::middleware(['auth.monitoring'])->group(function () {
         Route::put('/departments/{department}', [DepartmentController::class, 'update'])->name('departments.update');
         Route::delete('/departments/{department}', [DepartmentController::class, 'destroy'])->name('departments.destroy');
 
-        // FAE management
+        // FAE / Contact management
         Route::get('/fae', [FaeController::class, 'index'])->name('fae.index');
         Route::post('/fae', [FaeController::class, 'store'])->name('fae.store');
         Route::put('/fae/{fae}', [FaeController::class, 'update'])->name('fae.update');
         Route::delete('/fae/{fae}', [FaeController::class, 'destroy'])->name('fae.destroy');
+        Route::post('/fae/{fae}/approve', [FaeController::class, 'approve'])->name('fae.approve');
+        Route::post('/fae/{fae}/reject', [FaeController::class, 'reject'])->name('fae.reject');
 
         // Calendar Admin features
         Route::post('/calendar/appointment-status', [CalendarController::class, 'updateAppointmentStatus'])->name('calendar.updateAppointmentStatus');

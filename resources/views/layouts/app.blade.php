@@ -57,6 +57,9 @@
             </a>
 
             @if($isAdmin)
+                @php
+                    $pendingContactCount = \App\Models\FaeUser::pending()->count();
+                @endphp
                 <a href="{{ route('fae.index') }}" class="nav-item {{ request()->routeIs('fae.*') ? 'active' : '' }}" id="navFaeLink">
                     <span class="nav-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -66,7 +69,12 @@
                             <path d="M16 3.13a4 4 0 010 7.75"/>
                         </svg>
                     </span>
-                    <span>FAE</span>
+                    <span style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+                        <span>Contacts</span>
+                        @if($pendingContactCount > 0)
+                            <span style="background:#ef4444; color:#ffffff; font-size:10px; font-weight:800; padding:2px 7px; border-radius:10px; line-height:1; min-width:18px; text-align:center;">{{ $pendingContactCount }}</span>
+                        @endif
+                    </span>
                 </a>
             @endif
 
