@@ -183,4 +183,32 @@ class TaskUpdateTest extends TestCase
             'progress_at_update' => 25,
         ]);
     }
+
+    public function test_admin_can_update_task_details_with_array_fae_id(): void
+    {
+        $fae1 = $this->makeFae('ARRAY-1');
+        $fae2 = $this->makeFae('ARRAY-2');
+
+        $task = Task::create([
+            'fae_id' => $fae1->id,
+            'task_name' => 'Original Task Name',
+            'status' => 'Pending',
+            'progress' => 0,
+        ]);
+
+        $this->withSession(['monitoring_role' => 'admin'])
+            ->put('/tasks/' . $task->id, [
+                'task_name' => 'Updated Task Name',
+                'fae_id' => [$fae2->id],
+                'priority' => 'High',
+            ])
+            ->assertRedirect(route('tasks.index'));
+
+        $this->assertDatabaseHas('tasks', [
+            'id' => $task->id,
+            'task_name' => 'Updated Task Name',
+            'fae_id' => $fae2->id,
+            'priority' => 'High',
+        ]);
+    }
 }

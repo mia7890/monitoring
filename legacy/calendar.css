@@ -217,6 +217,13 @@
     color: #7c3aed;
 }
 
+.ev-accepted {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+    font-weight: 600;
+}
+
 .ev-more {
     background: #f3f4f6;
     color: #6b7280;

@@ -12,9 +12,11 @@ class DepartmentController extends Controller
     {
         $departments = Department::query()
             ->with(['faes' => function ($query) {
-                $query->orderBy('name', 'asc');
+                $query->approved()->orderBy('name', 'asc');
             }])
-            ->withCount('faes')
+            ->withCount(['faes' => function ($query) {
+                $query->approved();
+            }])
             ->orderBy('department_name', 'asc')
             ->get();
 
@@ -45,7 +47,7 @@ class DepartmentController extends Controller
 
         $department->update([
             'department_name' => trim($request->input('department_name')),
-            'is_active' => $request->boolean('is_active', true),
+            'is_active' => $request->has('is_active') ? $request->boolean('is_active') : false,
         ]);
 
         return redirect()->route('departments.index')->with('success', 'Department updated successfully.');

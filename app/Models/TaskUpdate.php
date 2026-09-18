@@ -32,4 +32,28 @@ class TaskUpdate extends Model
     {
         return $this->belongsTo(FaeUser::class, 'fae_id');
     }
+
+    /**
+     * Get attachments as a normalized list of paths.
+     * Supports legacy single-file strings as well as JSON arrays of multiple files.
+     *
+     * @return string[]
+     */
+    public function getAttachmentsListAttribute(): array
+    {
+        if (empty($this->attachment)) {
+            return [];
+        }
+
+        $val = trim($this->attachment);
+        if (str_starts_with($val, '[') && str_ends_with($val, ']')) {
+            $decoded = json_decode($val, true);
+            if (is_array($decoded)) {
+                return array_filter($decoded);
+            }
+        }
+
+        return [$val];
+    }
 }
+

@@ -3,8 +3,8 @@
 @endphp
 @extends('layouts.app')
 
-@section('title', 'Tasks & FAE Management')
-@section('breadcrumb', 'Tasks & FAE')
+@section('title', 'Tasks & Contacts Management')
+@section('breadcrumb', 'Tasks & Contacts')
 
 
 @section('content')
@@ -14,8 +14,8 @@
     <div class="page-intro">
         <div>
             <span class="welcome-label" style="color:var(--primary); font-size:10px; font-weight:700; letter-spacing:1px;">WORKSPACE</span>
-            <h1>Tasks &amp; FAE Directory</h1>
-            <p>Manage Field Application Engineers, assign regional tasks, and track real-time execution progress.</p>
+            <h1>Tasks &amp; Contacts Directory</h1>
+            <p>Manage Contact members, assign regional tasks, and track real-time execution progress.</p>
         </div>
 
         <div style="display:flex; align-items:center; gap:10px;">
@@ -34,11 +34,17 @@
                 <p>Track, filter and update all assigned field activities</p>
             </div>
 
-            @if($isAdmin)
-                <button type="button" class="primary-button btn-sm" id="openAddTaskModalBtn">
-                    <span>+</span> Add New Task
-                </button>
-            @endif
+            <div style="display:flex; align-items:center; gap:8px;">
+                <a href="{{ route('tasks.exportReport') }}" target="_blank" class="outline-button btn-sm" title="Generate and print executive PDF summary of all tasks">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                    PDF Summary
+                </a>
+                @if($isAdmin)
+                    <button type="button" class="primary-button btn-sm" id="openAddTaskModalBtn">
+                        <span>+</span> Add New Task
+                    </button>
+                @endif
+            </div>
         </div>
 
         <!-- FILTER TOOLBAR -->
@@ -53,18 +59,18 @@
             <div class="filters-row">
                 <select class="filter-select" id="statusFilter">
                     <option value="">All Statuses</option>
-                    <option value="Pending">Pending</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Overdue">Overdue</option>
+                    <option value="Pending" {{ request('status') === 'Pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="In Progress" {{ request('status') === 'In Progress' ? 'selected' : '' }}>In Progress</option>
+                    <option value="Completed" {{ request('status') === 'Completed' ? 'selected' : '' }}>Completed</option>
+                    <option value="Overdue" {{ request('status') === 'Overdue' ? 'selected' : '' }}>Overdue</option>
                 </select>
 
                 <select class="filter-select" id="faeFilter">
-                    <option value="">All FAE Members</option>
+                    <option value="">All Contact Members</option>
                     <option value="unassigned">Unassigned</option>
                     @foreach($allFaeForDropdown as $fae)
                         <option value="{{ $fae->id }}" {{ (string)$preselectedFaeId === (string)$fae->id ? 'selected' : '' }}>
-                            {{ $fae->name }} ({{ $fae->fae_code }})
+                            {{ $fae->name }}{{ !empty($fae->fae_code) ? ' (' . $fae->fae_code . ')' : '' }}
                         </option>
                     @endforeach
                 </select>
@@ -84,7 +90,7 @@
             <table id="tasksTable">
                 <thead>
                     <tr>
-                        <th>Assigned FAE</th>
+                        <th>Assigned Contact</th>
                         <th>Task Name</th>
                         <th>Region</th>
                         <th>Course</th>
@@ -124,6 +130,7 @@
                             data-region="{{ strtolower($row->region ?? '') }}"
                             data-course="{{ strtolower($row->course ?? '') }}"
                             data-status="{{ $rawStatus }}"
+                            data-is-overdue="{{ $isOverdue ? '1' : '0' }}"
                             data-fae-id="{{ $row->fae_id ?? 'unassigned' }}"
                             data-priority="{{ $priority }}">
                             <td>
@@ -192,54 +199,46 @@
                             </td>
 
                             <td style="text-align:right; white-space:nowrap;">
-                                @php
-                                    $gTitle = urlencode('Task Deadline: ' . $row->task_name);
-                                    $gDate = $row->deadline ? $row->deadline->format('Ymd') : date('Ymd');
-                                    $gEnd = $row->deadline ? $row->deadline->copy()->addDay()->format('Ymd') : date('Ymd');
-                                    $gDetails = urlencode("Task: {$row->task_name}\nRegion: {$row->region}\nCourse: {$row->course}\nDescription: " . ($row->description ?? 'N/A'));
-                                    $gUrl = "https://calendar.google.com/calendar/render?action=TEMPLATE&text={$gTitle}&dates={$gDate}/{$gEnd}&details={$gDetails}";
-                                @endphp
-
-                                <a href="{{ $gUrl }}" target="_blank" rel="noopener" class="google-calendar-link" title="Sync deadline to Google Calendar">
-                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                                    Sync Cal
-                                </a>
-
-
-                                <button type="button" 
-                                        class="outline-button btn-view-reports-trigger btn-sm" 
-                                        data-id="{{ $row->id }}"
-                                        title="View task details, progress logs, and submit reports">
-                                    Reports {{ $updateCount > 0 ? "($updateCount)" : '' }}
-                                </button>
-
-                                @if($isAdmin)
-                                    <button type="button" 
-                                            class="btn-icon-square btn-edit-task-trigger" 
-                                            data-id="{{ $row->id }}"
-                                            data-fae-id="{{ $row->fae_id ?? '' }}"
-                                            data-task-name="{{ $row->task_name }}"
-                                            data-region="{{ $row->region ?? '' }}"
-                                            data-course="{{ $row->course ?? '' }}"
-                                            data-deadline="{{ $row->deadline ? $row->deadline->format('Y-m-d') : '' }}"
-                                            data-status="{{ $row->status ?? 'Pending' }}"
-                                            data-progress="{{ (int)$row->progress }}"
-                                            data-priority="{{ $row->priority ?? 'Medium' }}"
-                                            data-description="{{ $row->description ?? '' }}"
-                                            title="Edit Task"
-                                            style="display:inline-flex; align-items:center; justify-content:center;">
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                                    </button>
+                                <div style="display:inline-flex; align-items:center; justify-content:flex-end; gap:4px;">
+                                    <a href="{{ route('tasks.report', $row->id) }}" target="_blank" class="btn-icon-square" title="Generate & Print PDF Report" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none; color:var(--text);">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                                    </a>
 
                                     <button type="button" 
-                                            class="btn-icon-square danger btn-delete-task-trigger" 
+                                            class="outline-button btn-view-reports-trigger btn-sm" 
                                             data-id="{{ $row->id }}"
-                                            data-name="{{ $row->task_name }}"
-                                            title="Delete Task"
-                                            style="display:inline-flex; align-items:center; justify-content:center;">
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                            title="View task details, progress logs, and submit reports">
+                                        Reports {{ $updateCount > 0 ? "($updateCount)" : '' }}
                                     </button>
-                                @endif
+
+                                    @if($isAdmin)
+                                        <button type="button" 
+                                                class="btn-icon-square btn-edit-task-trigger" 
+                                                data-id="{{ $row->id }}"
+                                                data-fae-id="{{ $row->fae_id ?? '' }}"
+                                                data-task-name="{{ $row->task_name }}"
+                                                data-region="{{ $row->region ?? '' }}"
+                                                data-course="{{ $row->course ?? '' }}"
+                                                data-deadline="{{ $row->deadline ? $row->deadline->format('Y-m-d') : '' }}"
+                                                data-status="{{ $row->status ?? 'Pending' }}"
+                                                data-progress="{{ (int)$row->progress }}"
+                                                data-priority="{{ $row->priority ?? 'Medium' }}"
+                                                data-description="{{ $row->description ?? '' }}"
+                                                title="Edit Task"
+                                                style="display:inline-flex; align-items:center; justify-content:center;">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                        </button>
+
+                                        <button type="button" 
+                                                class="btn-icon-square danger btn-delete-task-trigger" 
+                                                data-id="{{ $row->id }}"
+                                                data-name="{{ $row->task_name }}"
+                                                title="Delete Task"
+                                                style="display:inline-flex; align-items:center; justify-content:center;">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                        </button>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -252,12 +251,30 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- RESPONSIVE TASKS PAGINATION CONTROLS -->
+        <div id="tasksPaginationWrap" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding:14px 20px; border-top:1px solid #f1f5f9; background:#ffffff;">
+            <div style="font-size:12px; color:#64748b; font-weight:600;">
+                Showing <span id="tasksPageRangeSpan">1–10</span> of <span id="tasksTotalCountSpan">{{ $tasksList->count() }}</span> tasks
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;" id="tasksPaginationControls">
+                <button type="button" id="prevTaskPageBtn" class="outline-button btn-sm" style="display:inline-flex; align-items:center; gap:4px;" disabled>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    Previous
+                </button>
+                <div id="tasksPaginationNumbers" style="display:inline-flex; align-items:center; gap:4px; flex-wrap:wrap;"></div>
+                <button type="button" id="nextTaskPageBtn" class="outline-button btn-sm" style="display:inline-flex; align-items:center; gap:4px;">
+                    Next
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- FOOTER -->
     <footer>
         <span>Monitoring System © 2026</span>
-        <span>Task &amp; FAE System Active</span>
+        <span>Tasks &amp; Contacts System Active</span>
     </footer>
 </section>
 
@@ -265,62 +282,87 @@
      MODALS SECTION
      ========================================================= -->
 
-<!-- 1. ADD TASK MODAL -->
+<!-- 1. TASK CREATION / EDIT UNIFIED MODAL -->
 <div class="custom-modal-overlay" id="addTaskModal">
-    <div class="custom-modal">
+    <div class="custom-modal" style="max-width: 580px;">
         <div class="custom-modal-header">
-            <h3>Create New Task</h3>
+            <div>
+                <h3 id="taskModalHeaderTitle">Create New Task</h3>
+                <p id="taskModalHeaderSubtitle" style="font-size:11px; color:var(--text-light); margin:2px 0 0 0;">Fill in the task details and assign an engineer.</p>
+            </div>
             <button type="button" class="custom-modal-close" data-close="addTaskModal">&times;</button>
         </div>
 
         <form method="POST" action="{{ route('tasks.store') }}" id="addTaskForm">
             @csrf
+            <input type="hidden" name="_method" id="taskFormMethod" value="POST">
 
             <div class="custom-modal-body">
                 <div class="form-group">
-                    <label class="form-label">Assign To FAE</label>
-                    <select name="fae_id" id="addTaskFaeSelect" class="form-select">
-                        <option value="">-- Unassigned / General Task --</option>
-                        @foreach($allFaeForDropdown as $fae)
-                            <option value="{{ $fae->id }}" {{ (string)$preselectedFaeId === (string)$fae->id ? 'selected' : '' }}>
-                                {{ $fae->name }} ({{ $fae->fae_code }})
-                            </option>
-                        @endforeach
-                    </select>
+                    <label class="form-label">Assign To Contact(s) <span class="req">*</span></label>
+                    <div style="position:relative;" id="faeMultiSelectWrap">
+                        <div id="faeMultiSelectToggle" class="form-select" style="padding-left:36px; font-weight:600; font-size:13px; cursor:pointer; min-height:38px; display:flex; align-items:center; flex-wrap:wrap; gap:4px; user-select:none;">
+                            <span id="faeMultiPlaceholder" style="color:#94a3b8; font-weight:400;">-- Select Contact Member(s) --</span>
+                        </div>
+                        <span style="position:absolute; left:12px; top:11px; color:var(--primary); font-size:14px; pointer-events:none;">👤</span>
+                        <div id="faeMultiDropdown" style="display:none; position:absolute; top:100%; left:0; right:0; z-index:99; background:#fff; border:1px solid #cbd5e1; border-top:none; border-radius:0 0 8px 8px; max-height:220px; overflow-y:auto; box-shadow:0 8px 20px rgba(0,0,0,0.12);">
+                            @foreach($allFaeForDropdown as $fae)
+                                <label style="display:flex; align-items:center; gap:8px; padding:8px 12px; cursor:pointer; font-size:12.5px; font-weight:500; color:#0f172a; transition:background 0.1s;" class="fae-checkbox-option" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                                    <input type="checkbox" name="fae_id[]" value="{{ $fae->id }}" class="fae-multi-checkbox" {{ (string)$preselectedFaeId === (string)$fae->id ? 'checked' : '' }} style="accent-color:var(--primary); width:15px; height:15px; cursor:pointer;">
+                                    <span>{{ $fae->name }}@if(!empty($fae->fae_code)) <span style="color:#64748b; font-weight:400;">({{ $fae->fae_code }})</span>@endif</span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+                    <small style="font-size:10.5px; color:var(--text-secondary); margin-top:3px; display:block;">Select one or more contact members. A task copy will be created for each.</small>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Task Name / Deliverable <span class="req">*</span></label>
-                    <input type="text" name="task_name" class="form-control" placeholder="e.g. PLC Maintenance & System Health Check" required>
+                    <input type="text" name="task_name" id="addTaskName" class="form-control" placeholder="e.g. PLC Maintenance & System Health Check" required>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Region</label>
-                        <input type="text" name="region" class="form-control" placeholder="e.g. NCR, Region 3, Region 4A" list="regionOptions">
-                        <datalist id="regionOptions">
-                            <option value="NCR"><option value="Region 1"><option value="Region 2"><option value="Region 3">
-                            <option value="Region 4A"><option value="Region 4B"><option value="Region 5"><option value="Region 6">
-                            <option value="Region 7"><option value="Region 8"><option value="Region 9"><option value="Region 10">
-                            <option value="Region 11"><option value="Region 12"><option value="CAR"><option value="BARMM">
-                        </datalist>
+                        <select name="region" id="addTaskRegion" class="form-select">
+                            <option value="">-- Select Region --</option>
+                            <option value="NCR">NCR (National Capital Region)</option>
+                            <option value="Region 1">Region 1 (Ilocos Region)</option>
+                            <option value="Region 2">Region 2 (Cagayan Valley)</option>
+                            <option value="Region 3">Region 3 (Central Luzon)</option>
+                            <option value="Region 4A">Region 4A (CALABARZON)</option>
+                            <option value="Region 4B">Region 4B (MIMAROPA)</option>
+                            <option value="Region 5">Region 5 (Bicol Region)</option>
+                            <option value="Region 6">Region 6 (Western Visayas)</option>
+                            <option value="Region 7">Region 7 (Central Visayas)</option>
+                            <option value="Region 8">Region 8 (Eastern Visayas)</option>
+                            <option value="Region 9">Region 9 (Zamboanga Peninsula)</option>
+                            <option value="Region 10">Region 10 (Northern Mindanao)</option>
+                            <option value="Region 11">Region 11 (Davao Region)</option>
+                            <option value="Region 12">Region 12 (SOCCSKSARGEN)</option>
+                            <option value="CAR">CAR (Cordillera Admin Region)</option>
+                            <option value="BARMM">BARMM (Bangsamoro)</option>
+                            <option value="Other">Other / International</option>
+                        </select>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Course / Program / Module</label>
-                        <input type="text" name="course" class="form-control" placeholder="e.g. Mechatronics, Industrial Auto">
+                        <input type="text" name="course" id="addTaskCourse" class="form-control" placeholder="e.g. Mechatronics, Industrial Auto">
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">Deadline</label>
-                        <input type="date" name="deadline" class="form-control" value="{{ date('Y-m-d', strtotime('+7 days')) }}">
+                        <label class="form-label">Deadline <span class="req">*</span></label>
+                        <input type="date" name="deadline" id="addTaskDeadline" class="form-control" value="{{ date('Y-m-d', strtotime('+7 days')) }}" min="{{ date('Y-m-d') }}" required>
+                        <small style="font-size:10px; color:var(--text-secondary); margin-top:2px; display:block;">Must be today or a future date.</small>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Priority</label>
-                        <select name="priority" class="form-select">
+                        <select name="priority" id="addTaskPriority" class="form-select">
                             <option value="Low">Low</option>
                             <option value="Medium" selected>Medium</option>
                             <option value="High">High</option>
@@ -331,85 +373,72 @@
 
                 <div class="form-group">
                     <label class="form-label">Description / Instructions</label>
-                    <textarea name="description" class="form-control" rows="2" placeholder="Optional background details or scope..."></textarea>
+                    <textarea name="description" id="addTaskDescription" class="form-control" rows="2" placeholder="Optional background details, deliverables scope or site contact..."></textarea>
                 </div>
             </div>
 
             <div class="custom-modal-footer">
                 <button type="button" class="secondary-button btn-sm" data-close="addTaskModal">Cancel</button>
-                <button type="submit" class="primary-button btn-sm">Create Task</button>
+                <button type="button" class="primary-button btn-sm" id="btnReviewTaskSummary">
+                    Review &amp; Summary →
+                </button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- 2. EDIT TASK MODAL -->
-<div class="custom-modal-overlay" id="editTaskModal">
-    <div class="custom-modal">
+<!-- 1B. TASK CREATION / EDIT SUMMARY CONFIRMATION MODAL -->
+<div class="custom-modal-overlay" id="taskSummaryModal">
+    <div class="custom-modal" style="max-width: 480px;">
         <div class="custom-modal-header">
-            <h3>Edit Task Details</h3>
-            <button type="button" class="custom-modal-close" data-close="editTaskModal">&times;</button>
+            <div>
+                <h3 id="sumModalHeaderTitle">Confirm Task Details</h3>
+                <p id="sumModalHeaderSubtitle" style="font-size:11px; color:var(--text-light); margin:2px 0 0 0;">Please review the summary below before proceeding.</p>
+            </div>
+            <button type="button" class="custom-modal-close" data-close="taskSummaryModal">&times;</button>
         </div>
 
-        <form method="POST" action="" id="editTaskForm">
-            @csrf
-            @method('PUT')
+        <div class="custom-modal-body">
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:12px;">
+                <div style="font-size:11px; text-transform:uppercase; font-weight:700; color:var(--primary); margin-bottom:8px; letter-spacing:0.5px;">Task Overview</div>
+                <h4 id="sumTaskName" style="margin:0 0 10px 0; font-size:15px; color:#0f172a;"></h4>
 
-            <div class="custom-modal-body">
-                <div class="form-group">
-                    <label class="form-label">Assigned FAE</label>
-                    <select name="fae_id" id="editTaskFaeSelect" class="form-select">
-                        <option value="">-- Unassigned --</option>
-                        @foreach($allFaeForDropdown as $fae)
-                            <option value="{{ $fae->id }}">{{ $fae->name }} ({{ $fae->fae_code }})</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Task Name <span class="req">*</span></label>
-                    <input type="text" name="task_name" id="editTaskName" class="form-control" required>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Region</label>
-                        <input type="text" name="region" id="editTaskRegion" class="form-control" list="regionOptions">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12px; margin-bottom:10px;">
+                    <div>
+                        <span style="color:#64748b; font-size:11px; display:block;">Assigned Contact:</span>
+                        <strong id="sumFaeName" style="color:#0f172a;"></strong>
                     </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Course / Program</label>
-                        <input type="text" name="course" id="editTaskCourse" class="form-control">
+                    <div>
+                        <span style="color:#64748b; font-size:11px; display:block;">Priority:</span>
+                        <strong id="sumPriority" style="color:#0f172a;"></strong>
+                    </div>
+                    <div>
+                        <span style="color:#64748b; font-size:11px; display:block;">Region:</span>
+                        <span id="sumRegion" style="color:#0f172a; font-weight:600;"></span>
+                    </div>
+                    <div>
+                        <span style="color:#64748b; font-size:11px; display:block;">Course:</span>
+                        <span id="sumCourse" style="color:#0f172a; font-weight:600;"></span>
+                    </div>
+                    <div style="grid-column:1 / -1;">
+                        <span style="color:#64748b; font-size:11px; display:block;">Deadline:</span>
+                        <strong id="sumDeadline" style="color:#0f172a;"></strong>
                     </div>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Deadline</label>
-                        <input type="date" name="deadline" id="editTaskDeadline" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Priority</label>
-                        <select name="priority" id="editTaskPriority" class="form-select">
-                            <option value="Low">Low</option>
-                            <option value="Medium">Medium</option>
-                            <option value="High">High</option>
-                            <option value="Urgent">Urgent</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Description / Instructions</label>
-                    <textarea name="description" id="editTaskDescription" class="form-control" rows="2"></textarea>
+                <div id="sumDescWrap" style="border-top:1px dashed #cbd5e1; padding-top:8px; margin-top:8px; display:none;">
+                    <span style="color:#64748b; font-size:11px; display:block;">Instructions / Description:</span>
+                    <p id="sumDescription" style="margin:4px 0 0 0; font-size:11.5px; color:#334155; line-height:1.4;"></p>
                 </div>
             </div>
+        </div>
 
-            <div class="custom-modal-footer">
-                <button type="button" class="secondary-button btn-sm" data-close="editTaskModal">Cancel</button>
-                <button type="submit" class="primary-button btn-sm">Save Changes</button>
-            </div>
-        </form>
+        <div class="custom-modal-footer">
+            <button type="button" class="secondary-button btn-sm" id="btnBackToEditTask">← Back to Edit</button>
+            <button type="button" class="primary-button btn-sm" id="btnConfirmSubmitTask">
+                ✓ Confirm &amp; Submit Task
+            </button>
+        </div>
     </div>
 </div>
 
@@ -447,7 +476,13 @@
                 <h3 id="reportModalTaskTitle" style="font-size:14px; font-weight:700;">Task Details &amp; Reports</h3>
                 <div id="reportModalTaskBadges" style="display:flex; align-items:center; gap:6px; margin-top:4px;"></div>
             </div>
-            <button type="button" class="custom-modal-close" data-close="taskReportsModal">&times;</button>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <a href="#" target="_blank" id="reportModalPdfLink" class="outline-button btn-sm" title="Generate and print official PDF Task Report" style="display:inline-flex; align-items:center; gap:4px; text-decoration:none;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                    PDF Report
+                </a>
+                <button type="button" class="custom-modal-close" data-close="taskReportsModal">&times;</button>
+            </div>
         </div>
 
         <div class="custom-modal-body">
@@ -501,9 +536,15 @@
                 </div>
             </div>
 
+            <!-- COMPLETED LOCKED NOTICE -->
+            <div id="reportModalLockedNotice" style="display:none; background:rgba(22,163,74,0.08); border:1px solid #86efac; border-radius:8px; padding:14px; text-align:center; color:#15803d; font-weight:600; font-size:12px; margin-top:14px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline-block; vertical-align:middle; margin-right:6px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                This task is 100% completed. Progress updates and report submissions are closed.
+            </div>
+
             <!-- COMPOSER: SUBMIT NEW WORK REPORT / PROGRESS NOTE (FAE ONLY) -->
             @if(!$isAdmin)
-            <div class="report-composer-box">
+            <div class="report-composer-box" id="reportComposerBox">
                 <div class="report-composer-title">
                     Submit Work Report / Progress Note
                 </div>
@@ -518,7 +559,7 @@
                             <label class="form-label">Current Task Status</label>
                             <select name="status" id="reportFormStatus" class="form-select">
                                 <option value="In Progress">In Progress</option>
-                                <option value="Completed">Completed</option>
+                                <option value="Completed">Completed (Auto sets 100%)</option>
                                 <option value="Pending">Pending</option>
                                 <option value="Overdue">Overdue</option>
                             </select>
@@ -527,7 +568,7 @@
                         <div class="form-group">
                             <label class="form-label">Progress Percentage</label>
                             <div class="range-slider-wrapper">
-                                <input type="range" name="progress" id="reportFormProgressRange" min="0" max="100" value="0" oninput="document.getElementById('reportFormProgressVal').textContent = this.value + '%'">
+                                <input type="range" name="progress" id="reportFormProgressRange" min="0" max="100" value="0">
                                 <span class="range-val-badge" id="reportFormProgressVal">0%</span>
                             </div>
                         </div>
@@ -539,16 +580,15 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Photo / Attachment (Optional)</label>
-                        <input type="file" name="attachment" id="reportFormFile" class="form-control" accept="image/*,.pdf,.doc,.docx,.zip">
-                        <small style="font-size:10px; color:var(--text-secondary); margin-top:2px; display:block;">Attach photos of site work, inspection sheets, or report files (Max 10MB).</small>
+                        <label class="form-label">Photo Attachments (Multiple Supported)</label>
+                        <input type="file" name="attachments[]" id="reportFormFiles" class="form-control" multiple accept="image/*,.pdf,.doc,.docx,.zip">
+                        <small style="font-size:10.5px; color:var(--text-secondary); margin-top:2px; display:block;">Select one or multiple photos to attach. Live previews appear below.</small>
+                        
+                        <!-- Live Image Previews Container -->
+                        <div id="reportFilesPreview" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;"></div>
                     </div>
 
-                    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
-                        <button type="submit" class="primary-button btn-sm">
-                            Post Work Report
-                        </button>
-                    </div>
+
                 </form>
             </div>
             @endif
@@ -556,6 +596,12 @@
 
         <div class="custom-modal-footer">
             <button type="button" class="secondary-button btn-sm" data-close="taskReportsModal">Close</button>
+            @if(!$isAdmin)
+            <button type="submit" form="taskReportForm" class="primary-button btn-sm" id="reportSubmitBtn" style="display:inline-flex; align-items:center; gap:6px;">
+                <span>Post Work Report</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+            @endif
         </div>
     </div>
 </div>
@@ -595,22 +641,193 @@
         }
     });
 
+    // Unified Task Modal Mode Controller
+    let isTaskEditMode = false;
+
+    function resetTaskModalToAddMode() {
+        isTaskEditMode = false;
+        const titleEl = document.getElementById("taskModalHeaderTitle");
+        const subTitleEl = document.getElementById("taskModalHeaderSubtitle");
+        const formEl = document.getElementById("addTaskForm");
+        const methodEl = document.getElementById("taskFormMethod");
+
+        if (titleEl) titleEl.textContent = "Create New Task";
+        if (subTitleEl) subTitleEl.textContent = "Fill in the task details and assign an engineer.";
+        if (formEl) formEl.action = "{{ route('tasks.store') }}";
+        if (methodEl) methodEl.value = "POST";
+
+        document.getElementById("addTaskName").value = "";
+        document.getElementById("addTaskRegion").value = "";
+        document.getElementById("addTaskCourse").value = "";
+        document.getElementById("addTaskDeadline").value = "{{ date('Y-m-d', strtotime('+7 days')) }}";
+        document.getElementById("addTaskPriority").value = "Medium";
+        document.getElementById("addTaskDescription").value = "";
+
+        if (typeof faeCheckboxes !== 'undefined') {
+            faeCheckboxes.forEach(cb => cb.checked = false);
+            updateFaeMultiDisplay();
+        }
+    }
+
     // Add Task Modal Trigger
     const openAddTaskBtn = document.getElementById("openAddTaskModalBtn");
     if (openAddTaskBtn) {
         openAddTaskBtn.addEventListener("click", function() {
+            resetTaskModalToAddMode();
             openModal("addTaskModal");
         });
     }
 
     // Auto-open Add Task modal if assign_fae was passed in URL
     @if(!empty($preselectedFaeId))
+        resetTaskModalToAddMode();
         openModal("addTaskModal");
     @endif
 
-    // Edit Task Trigger
+    // Multi-Select FAE Dropdown Logic
+    const faeMultiToggle = document.getElementById("faeMultiSelectToggle");
+    const faeMultiDropdown = document.getElementById("faeMultiDropdown");
+    const faeMultiWrap = document.getElementById("faeMultiSelectWrap");
+    const faeCheckboxes = document.querySelectorAll(".fae-multi-checkbox");
+
+    function updateFaeMultiDisplay() {
+        if (!faeMultiToggle) return;
+        const checked = Array.from(faeCheckboxes).filter(cb => cb.checked);
+        if (checked.length === 0) {
+            faeMultiToggle.innerHTML = '<span id="faeMultiPlaceholder" style="color:#94a3b8; font-weight:400;">-- Select Contact Member(s) --</span>';
+        } else {
+            const names = checked.map(cb => {
+                const label = cb.closest('label');
+                const nameSpan = label ? label.querySelector('span') : null;
+                return nameSpan ? nameSpan.innerText.trim() : 'FAE #' + cb.value;
+            });
+            faeMultiToggle.innerHTML = names.map(n => 
+                `<span style="background:var(--primary-subtle, #eff6ff); color:var(--primary, #2563eb); border:1px solid rgba(37,99,235,0.2); padding:2px 8px; border-radius:4px; font-size:11.5px; font-weight:600; display:inline-flex; align-items:center;">${n}</span>`
+            ).join('');
+        }
+    }
+
+    if (faeMultiToggle && faeMultiDropdown) {
+        faeMultiToggle.addEventListener("click", function(e) {
+            e.stopPropagation();
+            const isOpen = faeMultiDropdown.style.display === "block";
+            faeMultiDropdown.style.display = isOpen ? "none" : "block";
+        });
+
+        document.addEventListener("click", function(e) {
+            if (faeMultiWrap && !faeMultiWrap.contains(e.target)) {
+                faeMultiDropdown.style.display = "none";
+            }
+        });
+
+        faeCheckboxes.forEach(cb => {
+            cb.addEventListener("change", updateFaeMultiDisplay);
+        });
+
+        // Initialize display if preselected
+        updateFaeMultiDisplay();
+    }
+
+    // TASK VALIDATION & SUMMARY FLOW (Unified for Add & Edit)
+    const btnReviewSummary = document.getElementById("btnReviewTaskSummary");
+    const addTaskForm = document.getElementById("addTaskForm");
+    const todayYmd = "{{ date('Y-m-d') }}";
+
+    if (btnReviewSummary && addTaskForm) {
+        btnReviewSummary.addEventListener("click", function() {
+            const checkedFaeBoxes = Array.from(document.querySelectorAll(".fae-multi-checkbox:checked"));
+            const taskNameInput = document.getElementById("addTaskName");
+            const deadlineInput = document.getElementById("addTaskDeadline");
+            const regionSelect = document.getElementById("addTaskRegion");
+            const courseInput = document.getElementById("addTaskCourse");
+            const prioritySelect = document.getElementById("addTaskPriority");
+            const descInput = document.getElementById("addTaskDescription");
+
+            const taskName = taskNameInput ? taskNameInput.value.trim() : "";
+            const deadline = deadlineInput ? deadlineInput.value : "";
+
+            // Check Contact assignment required
+            if (checkedFaeBoxes.length === 0) {
+                alert("Please select and assign at least one Contact person to this task.");
+                if (faeMultiToggle) {
+                    if (faeMultiDropdown) faeMultiDropdown.style.display = "block";
+                    faeMultiToggle.focus();
+                }
+                return;
+            }
+
+            // Check Task Name required
+            if (!taskName) {
+                alert("Please enter the task name or deliverable title.");
+                if (taskNameInput) taskNameInput.focus();
+                return;
+            }
+
+            // Check Overdue Deadline Validation (Only for creating or if deadline changed)
+            if (deadline && deadline < todayYmd && !isTaskEditMode) {
+                document.getElementById("deadlineAlertMessage").textContent = 
+                    "The selected deadline (" + deadline + ") is in the past. Tasks cannot be created with an overdue date. Please select today or a future date.";
+                openModal("deadlineAlertModal");
+                return;
+            }
+
+            // Populate Summary Modal
+            const selectedFaeNames = checkedFaeBoxes.map(cb => {
+                const label = cb.closest('label');
+                const nameSpan = label ? label.querySelector('span') : null;
+                return nameSpan ? nameSpan.innerText.trim() : 'FAE #' + cb.value;
+            }).join(', ');
+
+            const sumHeaderTitle = document.getElementById("sumModalHeaderTitle");
+            const sumHeaderSub = document.getElementById("sumModalHeaderSubtitle");
+            const confirmBtn = document.getElementById("btnConfirmSubmitTask");
+
+            if (sumHeaderTitle) sumHeaderTitle.textContent = isTaskEditMode ? "Confirm Task Update" : "Confirm Task Creation";
+            if (sumHeaderSub) sumHeaderSub.textContent = isTaskEditMode ? "Please review the updated details below before saving changes." : "Please review the summary below before creating the task.";
+            if (confirmBtn) confirmBtn.textContent = isTaskEditMode ? "✓ Confirm & Save Changes" : "✓ Confirm & Create Task";
+
+            document.getElementById("sumTaskName").textContent = taskName;
+            document.getElementById("sumFaeName").textContent = selectedFaeNames;
+            document.getElementById("sumPriority").textContent = prioritySelect ? prioritySelect.value : 'Medium';
+            document.getElementById("sumRegion").textContent = (regionSelect && regionSelect.value) ? regionSelect.value : '—';
+            document.getElementById("sumCourse").textContent = (courseInput && courseInput.value) ? courseInput.value : '—';
+            document.getElementById("sumDeadline").textContent = deadline || 'No deadline';
+
+            const descVal = descInput ? descInput.value.trim() : "";
+            const descWrap = document.getElementById("sumDescWrap");
+            if (descVal) {
+                document.getElementById("sumDescription").textContent = descVal;
+                descWrap.style.display = "block";
+            } else {
+                descWrap.style.display = "none";
+            }
+
+            closeModal("addTaskModal");
+            openModal("taskSummaryModal");
+        });
+    }
+
+    const btnBackToEdit = document.getElementById("btnBackToEditTask");
+    if (btnBackToEdit) {
+        btnBackToEdit.addEventListener("click", function() {
+            closeModal("taskSummaryModal");
+            openModal("addTaskModal");
+        });
+    }
+
+    const btnConfirmSubmit = document.getElementById("btnConfirmSubmitTask");
+    if (btnConfirmSubmit && addTaskForm) {
+        btnConfirmSubmit.addEventListener("click", function() {
+            this.disabled = true;
+            this.innerHTML = isTaskEditMode ? "Saving Changes..." : "Creating Task...";
+            addTaskForm.submit();
+        });
+    }
+
+    // Edit Task Trigger (Re-uses the EXACT SAME addTaskModal)
     document.querySelectorAll(".btn-edit-task-trigger").forEach(function(btn) {
         btn.addEventListener("click", function() {
+            isTaskEditMode = true;
             const taskId = this.getAttribute("data-id");
             const faeId = this.getAttribute("data-fae-id");
             const taskName = this.getAttribute("data-task-name");
@@ -620,16 +837,30 @@
             const priority = this.getAttribute("data-priority");
             const description = this.getAttribute("data-description");
 
-            document.getElementById("editTaskForm").action = "{{ url('tasks') }}/" + taskId;
-            document.getElementById("editTaskFaeSelect").value = faeId || "";
-            document.getElementById("editTaskName").value = taskName || "";
-            document.getElementById("editTaskRegion").value = region || "";
-            document.getElementById("editTaskCourse").value = course || "";
-            document.getElementById("editTaskDeadline").value = deadline || "";
-            document.getElementById("editTaskPriority").value = priority || "Medium";
-            document.getElementById("editTaskDescription").value = description || "";
+            const titleEl = document.getElementById("taskModalHeaderTitle");
+            const subTitleEl = document.getElementById("taskModalHeaderSubtitle");
+            const formEl = document.getElementById("addTaskForm");
+            const methodEl = document.getElementById("taskFormMethod");
 
-            openModal("editTaskModal");
+            if (titleEl) titleEl.textContent = "Edit Task Details";
+            if (subTitleEl) subTitleEl.textContent = "Update task information, assigned FAE, deadline, or priority.";
+            if (formEl) formEl.action = "{{ url('tasks') }}/" + taskId;
+            if (methodEl) methodEl.value = "PUT";
+
+            document.getElementById("addTaskName").value = taskName || "";
+            document.getElementById("addTaskRegion").value = region || "";
+            document.getElementById("addTaskCourse").value = course || "";
+            document.getElementById("addTaskDeadline").value = deadline || "";
+            document.getElementById("addTaskPriority").value = priority || "Medium";
+            document.getElementById("addTaskDescription").value = description || "";
+
+            // Pre-select assigned FAE in multi-select checkbox list
+            faeCheckboxes.forEach(cb => {
+                cb.checked = (String(cb.value) === String(faeId));
+            });
+            updateFaeMultiDisplay();
+
+            openModal("addTaskModal");
         });
     });
 
@@ -645,11 +876,80 @@
         });
     });
 
-    // Search and Filter logic
+    // TASK REPORTS PROGRESS AUTO-SYNC & MULTIPLE ATTACHMENT LIVE PREVIEWS
+    const reportFormStatus = document.getElementById("reportFormStatus");
+    const reportFormProgressRange = document.getElementById("reportFormProgressRange");
+    const reportFormProgressVal = document.getElementById("reportFormProgressVal");
+
+    if (reportFormProgressRange && reportFormProgressVal) {
+        reportFormProgressRange.addEventListener("input", function() {
+            reportFormProgressVal.textContent = this.value + "%";
+            if (reportFormStatus) {
+                if (parseInt(this.value) >= 100) {
+                    reportFormStatus.value = "Completed";
+                } else if (parseInt(this.value) > 0 && reportFormStatus.value === "Pending") {
+                    reportFormStatus.value = "In Progress";
+                }
+            }
+        });
+    }
+
+    if (reportFormStatus) {
+        reportFormStatus.addEventListener("change", function() {
+            if (this.value === "Completed" && reportFormProgressRange && reportFormProgressVal) {
+                reportFormProgressRange.value = 100;
+                reportFormProgressVal.textContent = "100%";
+            }
+        });
+    }
+
+    // Multiple Files Live Preview
+    const reportFilesInput = document.getElementById("reportFormFiles");
+    const reportFilesPreview = document.getElementById("reportFilesPreview");
+
+    if (reportFilesInput && reportFilesPreview) {
+        reportFilesInput.addEventListener("change", function() {
+            reportFilesPreview.innerHTML = "";
+            const files = Array.from(this.files);
+
+            if (files.length === 0) return;
+
+            files.forEach(file => {
+                const itemDiv = document.createElement("div");
+                itemDiv.style.cssText = "position:relative; border:1px solid #cbd5e1; border-radius:6px; padding:4px; background:#ffffff; max-width:120px; font-size:10px; text-align:center;";
+
+                if (file.type.startsWith("image/")) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        itemDiv.innerHTML = '<img src="' + e.target.result + '" style="width:100%; height:60px; object-fit:cover; border-radius:4px; display:block; margin-bottom:3px;">' +
+                                            '<div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; color:#475569;">' + escapeHtml(file.name) + '</div>';
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    itemDiv.innerHTML = '<div style="height:60px; display:flex; align-items:center; justify-content:center; background:#f1f5f9; border-radius:4px; font-size:20px; margin-bottom:3px;">📄</div>' +
+                                        '<div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; color:#475569;">' + escapeHtml(file.name) + '</div>';
+                }
+                reportFilesPreview.appendChild(itemDiv);
+            });
+        });
+    }
+
+    // Search and Filter + Responsive Pagination Logic
     const searchInput = document.getElementById("taskSearchInput");
     const statusFilter = document.getElementById("statusFilter");
     const faeFilter = document.getElementById("faeFilter");
     const priorityFilter = document.getElementById("priorityFilter");
+
+    let currentTaskPage = 1;
+    let tasksPerPage = 10;
+    let matchingRows = [];
+
+    function calculateTasksPerPage() {
+        const width = window.innerWidth;
+        if (width < 768) return 6;
+        if (width < 1200) return 8;
+        return 10;
+    }
 
     function applyTaskFilters() {
         const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
@@ -657,10 +957,10 @@
         const faeVal = faeFilter ? faeFilter.value : "";
         const priorityVal = priorityFilter ? priorityFilter.value : "";
 
-        const rows = document.querySelectorAll(".task-table-row");
-        let visibleCount = 0;
+        const allRows = Array.from(document.querySelectorAll(".task-table-row"));
+        matchingRows = [];
 
-        rows.forEach(function(row) {
+        allRows.forEach(function(row) {
             const taskName = row.getAttribute("data-task-name") || "";
             const faeName = row.getAttribute("data-fae-name") || "";
             const region = row.getAttribute("data-region") || "";
@@ -675,23 +975,111 @@
                                  region.includes(query) || 
                                  course.includes(query);
 
-            const matchesStatus = !statusVal || status === statusVal;
+            let matchesStatus = true;
+            if (statusVal === 'Overdue') {
+                const isOverdue = row.getAttribute("data-is-overdue") === "1" || status.toLowerCase() === "overdue";
+                matchesStatus = isOverdue;
+            } else if (statusVal) {
+                matchesStatus = (status.toLowerCase() === statusVal.toLowerCase());
+            }
             const matchesFae = !faeVal || faeId === faeVal;
             const matchesPriority = !priorityVal || priority === priorityVal;
 
             if (matchesQuery && matchesStatus && matchesFae && matchesPriority) {
-                row.style.display = "";
-                visibleCount++;
+                matchingRows.push(row);
             } else {
                 row.style.display = "none";
             }
         });
+
+        currentTaskPage = 1;
+        renderTasksPage();
     }
+
+    function renderTasksPage() {
+        tasksPerPage = calculateTasksPerPage();
+        const total = matchingRows.length;
+        const totalPages = Math.ceil(total / tasksPerPage) || 1;
+
+        if (currentTaskPage > totalPages) currentTaskPage = totalPages;
+        if (currentTaskPage < 1) currentTaskPage = 1;
+
+        const startIndex = (currentTaskPage - 1) * tasksPerPage;
+        const endIndex = startIndex + tasksPerPage;
+
+        matchingRows.forEach((row, idx) => {
+            if (idx >= startIndex && idx < endIndex) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+
+        // Update range display
+        const rangeSpan = document.getElementById("tasksPageRangeSpan");
+        const totalSpan = document.getElementById("tasksTotalCountSpan");
+        if (rangeSpan && totalSpan) {
+            if (total === 0) {
+                rangeSpan.textContent = "0";
+            } else {
+                rangeSpan.textContent = (startIndex + 1) + "–" + Math.min(endIndex, total);
+            }
+            totalSpan.textContent = total;
+        }
+
+        // Update prev/next buttons
+        const prevBtn = document.getElementById("prevTaskPageBtn");
+        const nextBtn = document.getElementById("nextTaskPageBtn");
+        if (prevBtn) prevBtn.disabled = (currentTaskPage <= 1);
+        if (nextBtn) nextBtn.disabled = (currentTaskPage >= totalPages || total === 0);
+
+        // Render page buttons
+        const numbersWrap = document.getElementById("tasksPaginationNumbers");
+        if (numbersWrap) {
+            numbersWrap.innerHTML = "";
+            for (let p = 1; p <= totalPages; p++) {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "btn-sm " + (p === currentTaskPage ? "primary-button" : "outline-button");
+                btn.style.padding = "4px 10px";
+                btn.textContent = p;
+                btn.addEventListener("click", () => {
+                    currentTaskPage = p;
+                    renderTasksPage();
+                });
+                numbersWrap.appendChild(btn);
+            }
+        }
+    }
+
+    const prevTaskBtn = document.getElementById("prevTaskPageBtn");
+    const nextTaskBtn = document.getElementById("nextTaskPageBtn");
+    if (prevTaskBtn) {
+        prevTaskBtn.addEventListener("click", () => {
+            if (currentTaskPage > 1) {
+                currentTaskPage--;
+                renderTasksPage();
+            }
+        });
+    }
+    if (nextTaskBtn) {
+        nextTaskBtn.addEventListener("click", () => {
+            currentTaskPage++;
+            renderTasksPage();
+        });
+    }
+
+    window.addEventListener("resize", () => {
+        renderTasksPage();
+    });
 
     if (searchInput) searchInput.addEventListener("input", applyTaskFilters);
     if (statusFilter) statusFilter.addEventListener("change", applyTaskFilters);
     if (faeFilter) faeFilter.addEventListener("change", applyTaskFilters);
     if (priorityFilter) priorityFilter.addEventListener("change", applyTaskFilters);
+
+    // Initial task filter/pagination run
+    applyTaskFilters();
 
     function escapeHtml(text) {
         if (text === null || text === undefined) return '';
@@ -704,136 +1092,177 @@
         if (!dateStr) return '';
         const d = new Date(dateStr);
         if (isNaN(d.getTime())) return dateStr;
-        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     }
 
-    // AJAX Timeline Loader
+    function openTaskTimeline(taskId) {
+        if (!taskId) return;
+
+        openModal("taskReportsModal");
+        const timelineContainer = document.getElementById("reportModalTimeline");
+        timelineContainer.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-secondary); font-size:11px;">Loading report timeline...</div>';
+
+        fetch("{{ route('tasks.timeline') }}?task_id=" + encodeURIComponent(taskId))
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    timelineContainer.innerHTML = '<div class="alert-banner error">' + escapeHtml(data.error || 'Failed to load task updates.') + '</div>';
+                    return;
+                }
+
+                const t = data.task;
+                document.getElementById("reportModalTaskTitle").textContent = t.task_name;
+                document.getElementById("reportModalFaeName").textContent = t.fae_name || 'Unassigned';
+                document.getElementById("reportModalFaeCode").textContent = t.fae_code ? '(' + t.fae_code + ')' : '';
+                document.getElementById("reportModalRegion").textContent = t.region || '—';
+                document.getElementById("reportModalCourse").textContent = t.course || '—';
+                document.getElementById("reportModalDeadline").textContent = t.deadline || '—';
+
+                // PDF report link
+                const pdfLink = document.getElementById("reportModalPdfLink");
+                if (pdfLink) {
+                    pdfLink.href = "{{ url('tasks') }}/" + encodeURIComponent(t.id) + "/report";
+                }
+
+                const pct = parseInt(t.progress) || 0;
+                const isCompleted = pct >= 100 || (t.status && t.status.toLowerCase() === 'completed');
+
+                const fillEl = document.getElementById("reportModalProgressFill");
+                fillEl.style.width = pct + '%';
+                fillEl.className = pct <= 25 ? 'progress-red' : (pct <= 50 ? 'progress-orange' : (pct <= 75 ? 'progress-gold' : 'progress-green'));
+                document.getElementById("reportModalProgressPct").textContent = pct + '%';
+
+                if (t.description) {
+                    document.getElementById("reportModalDescription").textContent = t.description;
+                    document.getElementById("reportModalDescWrap").style.display = "block";
+                } else {
+                    document.getElementById("reportModalDescWrap").style.display = "none";
+                }
+
+                // Status & priority badges
+                const badgesWrap = document.getElementById("reportModalTaskBadges");
+                let normStatus = (t.status || 'Pending').toLowerCase().replace(/\s+/g, '');
+                let badgeClass = normStatus === 'inprogress' ? 'progress-badge' : normStatus + '-badge';
+                badgesWrap.innerHTML = '<span class="badge ' + badgeClass + '">' + escapeHtml(t.status) + '</span>' +
+                                      '<span class="badge priority-' + (t.priority || 'Medium').toLowerCase() + '">' + escapeHtml(t.priority || 'Medium') + '</span>';
+
+                // Lock update form if 100% completed
+                const lockedEl = document.getElementById("reportModalLockedNotice");
+                const formBox = document.getElementById("reportComposerBox");
+                if (lockedEl) lockedEl.style.display = isCompleted ? 'block' : 'none';
+                if (formBox) formBox.style.display = isCompleted ? 'none' : 'block';
+
+                // Prepare form
+                const formTaskId = document.getElementById("reportFormTaskId");
+                if (formTaskId) formTaskId.value = t.id;
+                const formStatus = document.getElementById("reportFormStatus");
+                if (formStatus) formStatus.value = t.status;
+                const formProgress = document.getElementById("reportFormProgressRange");
+                if (formProgress) {
+                    formProgress.value = pct;
+                    document.getElementById("reportFormProgressVal").textContent = pct + '%';
+                }
+
+                // Render updates list
+                const updates = data.updates || [];
+                document.getElementById("reportModalUpdateCount").textContent = updates.length + (updates.length === 1 ? ' update' : ' updates');
+
+                if (updates.length === 0) {
+                    timelineContainer.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-secondary); font-size:11px;">No work reports or progress notes logged yet.</div>';
+                } else {
+                    let html = '';
+                    updates.forEach(u => {
+                        const isAdminAuthor = u.author_role === 'admin';
+                        const authorBadge = isAdminAuthor ? 'Supervisor' : 'FAE';
+                        const badgeColor = isAdminAuthor ? '#ef4444' : '#3b82f6';
+                        const backgroundColor = isAdminAuthor ? 'rgba(239,68,68,0.05)' : 'rgba(59,130,246,0.05)';
+                        const borderColor = isAdminAuthor ? '#fca5a5' : '#93c5fd';
+
+                        html += '<div style="background:' + backgroundColor + '; border:1px solid ' + borderColor + '; border-radius:8px; padding:12px; margin-bottom:12px; transition:all 0.2s ease;">' +
+                                    '<div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">' +
+                                        '<strong style="font-size:13px; color:var(--text);">' + escapeHtml(u.author_name) + '</strong>' +
+                                        '<span style="background:' + badgeColor + '; color:white; font-size:9px; font-weight:700; padding:3px 8px; border-radius:4px;">' + authorBadge + '</span>' +
+                                    '</div>' +
+                                    '<div style="font-size:11px; color:var(--text); line-height:1.5; margin-bottom:10px;">' +
+                                        '<span style="color:var(--text-light); font-weight:600;">Message:</span><br>' +
+                                        '<p style="margin:4px 0 0 0; color:var(--text);">' + escapeHtml(u.message).replace(/\n/g, '<br>') + '</p>' +
+                                    '</div>';
+
+                        html += '<div style="display:flex; align-items:center; gap:12px; font-size:9px; color:var(--text-light); margin-bottom:10px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.05);">' +
+                                    '<span><strong>Date:</strong> ' + formatDate(u.created_at) + '</span>' +
+                                '</div>';
+
+                        if (u.progress_at_update !== null || u.status_at_update) {
+                            html += '<div style="display:flex; gap:12px; font-size:10px; flex-wrap:wrap;">';
+                            if (u.progress_at_update !== null) {
+                                html += '<span style="background:rgba(34,197,94,0.1); color:#16a34a; padding:4px 8px; border-radius:4px; font-weight:600;"><strong>Progress:</strong> ' + parseInt(u.progress_at_update) + '%</span>';
+                            }
+                            if (u.status_at_update) {
+                                const statusColor = u.status_at_update === 'Completed' ? '#16a34a' : (u.status_at_update === 'Overdue' ? '#dc2626' : '#f59e0b');
+                                const statusBg = u.status_at_update === 'Completed' ? 'rgba(22,163,74,0.1)' : (u.status_at_update === 'Overdue' ? 'rgba(220,38,38,0.1)' : 'rgba(245,158,11,0.1)');
+                                html += '<span style="background:' + statusBg + '; color:' + statusColor + '; padding:4px 8px; border-radius:4px; font-weight:600;"><strong>Status:</strong> ' + escapeHtml(u.status_at_update) + '</span>';
+                            }
+                            html += '</div>';
+                        }
+
+                        // Attachments handling (supports multiple attachments JSON or single string)
+                        if (u.attachment) {
+                            let attList = [];
+                            try {
+                                if (u.attachment.startsWith('[') && u.attachment.endsWith(']')) {
+                                    attList = JSON.parse(u.attachment);
+                                } else {
+                                    attList = [u.attachment];
+                                }
+                            } catch(e) {
+                                attList = [u.attachment];
+                            }
+
+                            if (attList.length > 0) {
+                                html += '<div style="margin-top:10px; display:flex; flex-wrap:wrap; gap:8px;">';
+                                attList.forEach(attPath => {
+                                    const ext = attPath.split('.').pop().toLowerCase();
+                                    const isImg = ['jpg','jpeg','png','gif','webp','bmp'].includes(ext);
+                                    const assetUrl = '{{ url('files') }}/' + encodeURIComponent(attPath);
+
+                                    if (isImg) {
+                                        html += '<a href="' + assetUrl + '" target="_blank" style="display:inline-block; border:1px solid #cbd5e1; border-radius:6px; overflow:hidden; background:#fff; text-decoration:none;">' +
+                                                    '<img src="' + assetUrl + '" alt="Report photo" style="height:90px; width:120px; object-fit:cover; display:block;">' +
+                                                '</a>';
+                                    } else {
+                                        html += '<a href="' + assetUrl + '" target="_blank" class="outline-button btn-sm" style="display:inline-flex; align-items:center; gap:4px; text-decoration:none; padding:4px 8px;">' +
+                                                    '📎 ' + escapeHtml(attPath.split('/').pop()) +
+                                                '</a>';
+                                    }
+                                });
+                                html += '</div>';
+                            }
+                        }
+
+                        html += '</div>';
+                    });
+                    timelineContainer.innerHTML = html;
+                }
+            })
+            .catch(err => {
+                console.error("Timeline error:", err);
+                timelineContainer.innerHTML = '<div class="alert-banner error">Failed to load timeline updates.</div>';
+            });
+    }
+
+    // AJAX Timeline Trigger
     document.querySelectorAll(".btn-view-reports-trigger").forEach(function(btn) {
         btn.addEventListener("click", function() {
             const taskId = this.getAttribute("data-id");
-            if (!taskId) return;
-
-            openModal("taskReportsModal");
-            const timelineContainer = document.getElementById("reportModalTimeline");
-            timelineContainer.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-secondary); font-size:11px;">Loading report timeline...</div>';
-
-            fetch("{{ route('tasks.timeline') }}?task_id=" + encodeURIComponent(taskId))
-                .then(res => res.json())
-                .then(data => {
-                    if (!data.success) {
-                        timelineContainer.innerHTML = '<div class="alert-banner error">' + escapeHtml(data.error || 'Failed to load task updates.') + '</div>';
-                        return;
-                    }
-
-                    const t = data.task;
-                    document.getElementById("reportModalTaskTitle").textContent = t.task_name;
-                    document.getElementById("reportModalFaeName").textContent = t.fae_name || 'Unassigned';
-                    document.getElementById("reportModalFaeCode").textContent = t.fae_code ? '(' + t.fae_code + ')' : '';
-                    document.getElementById("reportModalRegion").textContent = t.region || '—';
-                    document.getElementById("reportModalCourse").textContent = t.course || '—';
-                    document.getElementById("reportModalDeadline").textContent = t.deadline || '—';
-
-                    const pct = parseInt(t.progress) || 0;
-                    const fillEl = document.getElementById("reportModalProgressFill");
-                    fillEl.style.width = pct + '%';
-                    fillEl.className = pct <= 25 ? 'progress-red' : (pct <= 50 ? 'progress-orange' : (pct <= 75 ? 'progress-gold' : 'progress-green'));
-                    document.getElementById("reportModalProgressPct").textContent = pct + '%';
-
-                    if (t.description) {
-                        document.getElementById("reportModalDescription").textContent = t.description;
-                        document.getElementById("reportModalDescWrap").style.display = "block";
-                    } else {
-                        document.getElementById("reportModalDescWrap").style.display = "none";
-                    }
-
-                    // Status & priority badges
-                    const badgesWrap = document.getElementById("reportModalTaskBadges");
-                    let normStatus = (t.status || 'Pending').toLowerCase().replace(/\s+/g, '');
-                    let badgeClass = normStatus === 'inprogress' ? 'progress-badge' : normStatus + '-badge';
-                    badgesWrap.innerHTML = '<span class="badge ' + badgeClass + '">' + escapeHtml(t.status) + '</span>' +
-                                          '<span class="badge priority-' + (t.priority || 'Medium').toLowerCase() + '">' + escapeHtml(t.priority || 'Medium') + '</span>';
-
-                    // Prepare form
-                    const formTaskId = document.getElementById("reportFormTaskId");
-                    if (formTaskId) formTaskId.value = t.id;
-                    const formStatus = document.getElementById("reportFormStatus");
-                    if (formStatus) formStatus.value = t.status;
-                    const formProgress = document.getElementById("reportFormProgressRange");
-                    if (formProgress) {
-                        formProgress.value = pct;
-                        document.getElementById("reportFormProgressVal").textContent = pct + '%';
-                    }
-
-                    // Render updates list
-                    const updates = data.updates || [];
-                    document.getElementById("reportModalUpdateCount").textContent = updates.length + (updates.length === 1 ? ' update' : ' updates');
-
-                    if (updates.length === 0) {
-                        timelineContainer.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-secondary); font-size:11px;">No work reports or progress notes logged yet.</div>';
-                    } else {
-                        let html = '';
-                        updates.forEach(u => {
-                            const isAdminAuthor = u.author_role === 'admin';
-                            const authorBadge = isAdminAuthor ? 'Supervisor' : 'FAE';
-                            const badgeColor = isAdminAuthor ? '#ef4444' : '#3b82f6';
-                            const backgroundColor = isAdminAuthor ? 'rgba(239,68,68,0.05)' : 'rgba(59,130,246,0.05)';
-                            const borderColor = isAdminAuthor ? '#fca5a5' : '#93c5fd';
-
-                            html += '<div style="background:' + backgroundColor + '; border:1px solid ' + borderColor + '; border-radius:8px; padding:12px; margin-bottom:12px; transition:all 0.2s ease;">' +
-                                        '<div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">' +
-                                            '<strong style="font-size:13px; color:var(--text);">' + escapeHtml(u.author_name) + '</strong>' +
-                                            '<span style="background:' + badgeColor + '; color:white; font-size:9px; font-weight:700; padding:3px 8px; border-radius:4px;">' + authorBadge + '</span>' +
-                                        '</div>' +
-                                        '<div style="font-size:11px; color:var(--text); line-height:1.5; margin-bottom:10px;">' +
-                                            '<span style="color:var(--text-light); font-weight:600;">Message:</span><br>' +
-                                            '<p style="margin:4px 0 0 0; color:var(--text);">' + escapeHtml(u.message).replace(/\n/g, '<br>') + '</p>' +
-                                        '</div>';
-
-                            html += '<div style="display:flex; align-items:center; gap:12px; font-size:9px; color:var(--text-light); margin-bottom:10px; padding-top:10px; border-top:1px solid rgba(0,0,0,0.05);">' +
-                                        '<span><strong>Date:</strong> ' + formatDate(u.created_at) + '</span>' +
-                                    '</div>';
-
-                            if (u.progress_at_update !== null || u.status_at_update) {
-                                html += '<div style="display:flex; gap:12px; font-size:10px; flex-wrap:wrap;">';
-                                if (u.progress_at_update !== null) {
-                                    html += '<span style="background:rgba(34,197,94,0.1); color:#16a34a; padding:4px 8px; border-radius:4px; font-weight:600;"><strong>Progress:</strong> ' + parseInt(u.progress_at_update) + '%</span>';
-                                }
-                                if (u.status_at_update) {
-                                    const statusColor = u.status_at_update === 'Completed' ? '#16a34a' : (u.status_at_update === 'Overdue' ? '#dc2626' : '#f59e0b');
-                                    const statusBg = u.status_at_update === 'Completed' ? 'rgba(22,163,74,0.1)' : (u.status_at_update === 'Overdue' ? 'rgba(220,38,38,0.1)' : 'rgba(245,158,11,0.1)');
-                                    html += '<span style="background:' + statusBg + '; color:' + statusColor + '; padding:4px 8px; border-radius:4px; font-weight:600;"><strong>Status:</strong> ' + escapeHtml(u.status_at_update) + '</span>';
-                                }
-                                html += '</div>';
-                            }
-
-                            if (u.attachment) {
-                                const ext = u.attachment.split('.').pop().toLowerCase();
-                                const isImg = ['jpg','jpeg','png','gif','webp','bmp'].includes(ext);
-                                const assetUrl = '{{ url('files') }}/' + u.attachment;
-
-                                if (isImg) {
-                                    html += '<div style="margin-top:10px;">' +
-                                                '<a href="' + assetUrl + '" target="_blank"><img src="' + assetUrl + '" alt="Attachment preview" style="max-height:150px; border-radius:6px; border:1px solid #ddd; display:block; margin-bottom:6px;"></a>' +
-                                                driveBtn +
-                                            '</div>';
-                                } else {
-                                    html += '<div style="margin-top:10px; display:flex; align-items:center; flex-wrap:wrap; gap:6px;">' +
-                                                '<a href="' + assetUrl + '" target="_blank" class="outline-button btn-sm" style="display:inline-flex; align-items:center; gap:4px; text-decoration:none;">Download ' + escapeHtml(u.attachment.split('/').pop()) + '</a>' +
-                                                driveBtn +
-                                            '</div>';
-                                }
-                            }
-
-                            html += '</div>';
-                        });
-                        timelineContainer.innerHTML = html;
-                    }
-                })
-                .catch(err => {
-                    console.error("Timeline error:", err);
-                    timelineContainer.innerHTML = '<div class="alert-banner error">Failed to load timeline updates.</div>';
-                });
+            openTaskTimeline(taskId);
         });
     });
+
+    // Auto-open modal if URL has view_task or task_id parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const autoTaskId = urlParams.get('view_task') || urlParams.get('task_id');
+    if (autoTaskId) {
+        openTaskTimeline(autoTaskId);
+    }
 </script>
 @endpush

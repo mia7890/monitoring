@@ -41,7 +41,7 @@ class LandingController extends Controller
         $data['totalInProgressTasks'] = Task::where('status', 'In Progress')->count();
         $data['totalCompletedTasks'] = Task::where('status', 'Completed')->count();
         $data['totalActiveTasks'] = Task::whereIn('status', ['Pending', 'In Progress'])->count();
-        $data['totalFAE'] = FaeUser::count();
+        $data['totalFAE'] = FaeUser::approved()->count();
 
         return view('landing', $data);
     }

@@ -50,6 +50,24 @@ class CalendarController extends Controller
         $reason = trim($request->input('reason'));
         $userName = MonitoringAuth::faeName();
 
+        // Check 2 schedules limit per day
+        $dailyApptCount = Appointment::whereDate('appointment_date', $apptDate)
+            ->whereIn('status', ['pending', 'accepted', 'rescheduled', 'completed'])
+            ->count();
+
+        $dailyBusyCount = AdminEvent::where(function ($query) use ($apptDate) {
+                $query->whereDate('event_date', $apptDate)
+                      ->orWhere(function ($q) use ($apptDate) {
+                          $q->whereNotNull('end_date')
+                            ->whereDate('event_date', '<=', $apptDate)
+                            ->whereDate('end_date', '>=', $apptDate);
+                      });
+            })->count();
+
+        if (($dailyApptCount + $dailyBusyCount) >= 2) {
+            return back()->with('error', 'This date has reached the maximum limitation of 2 schedules per day. Please choose another date.');
+        }
+
         // Check if admin is busy on this date
         $adminBusy = AdminEvent::where('category', 'busy')
             ->where(function ($query) use ($apptDate) {
@@ -66,10 +84,10 @@ class CalendarController extends Controller
             return back()->with('error', 'The admin is unavailable on this date. Please choose another date.');
         }
 
-        // Check if this FAE already has an appointment on this date (pending, accepted, or rejected)
+        // Check if this FAE already has an appointment on this date (pending, accepted, rescheduled, rejected, or completed)
         $existingFaeAppt = Appointment::where('fae_id', $currentFaeId)
             ->whereDate('appointment_date', $apptDate)
-            ->whereIn('status', ['pending', 'accepted', 'rejected'])
+            ->whereIn('status', ['pending', 'accepted', 'rescheduled', 'rejected', 'completed'])
             ->first();
 
         if ($existingFaeAppt) {
@@ -77,9 +95,9 @@ class CalendarController extends Controller
             return back()->with('error', "You already have an appointment ({$existingFaeAppt->status} - {$slotDisplay}) on this date. You cannot double book on the same day.");
         }
 
-        // Check if the requested time slot overlaps with an existing pending or accepted appointment
+        // Check if the requested time slot overlaps with an existing pending, accepted, or rescheduled appointment
         $conflictingAppointment = Appointment::whereDate('appointment_date', $apptDate)
-            ->whereIn('status', ['pending', 'accepted'])
+            ->whereIn('status', ['pending', 'accepted', 'rescheduled'])
             ->where(function ($query) use ($startTime, $endTime) {
                 $query->whereNull('start_time')
                       ->orWhereNull('end_time')
@@ -115,8 +133,11 @@ class CalendarController extends Controller
     {
         $request->validate([
             'appt_id' => 'required|exists:appointments,id',
-            'status' => 'required|in:accepted,rejected',
+            'status' => 'required|in:accepted,rejected,completed,not_completed,rescheduled',
             'admin_comment' => 'nullable|string',
+            'rescheduled_date' => 'nullable|date|after_or_equal:today',
+            'rescheduled_start_time' => 'nullable|date_format:H:i',
+            'rescheduled_end_time' => 'nullable|date_format:H:i|after:rescheduled_start_time',
         ]);
 
         $appt = Appointment::findOrFail($request->input('appt_id'));
@@ -126,7 +147,7 @@ class CalendarController extends Controller
         if ($newStatus === 'accepted') {
             $appt->update([
                 'status' => 'accepted',
-                'admin_comment' => null,
+                'admin_comment' => $adminComment ?: null,
             ]);
 
             // Reject ONLY other pending requests for the same date that overlap with this accepted appointment
@@ -151,6 +172,43 @@ class CalendarController extends Controller
             ]);
 
             return back()->with('success', 'Appointment accepted! Any overlapping pending requests on this day were automatically rejected.');
+        } elseif ($newStatus === 'completed') {
+            $appt->update([
+                'status' => 'completed',
+                'admin_comment' => $adminComment ?: 'Meeting successfully completed.',
+            ]);
+
+            return back()->with('success', 'Meeting confirmed as COMPLETED.');
+        } elseif ($newStatus === 'not_completed') {
+            $appt->update([
+                'status' => 'not_completed',
+                'admin_comment' => $adminComment ?: 'Meeting was NOT held / cancelled.',
+            ]);
+
+            return back()->with('success', 'Meeting marked as NOT COMPLETED.');
+        } elseif ($newStatus === 'rescheduled') {
+            $reschedDate = $request->input('rescheduled_date');
+            $reschedStart = $request->input('rescheduled_start_time');
+            $reschedEnd = $request->input('rescheduled_end_time');
+
+            $updateData = [
+                'status' => 'rescheduled',
+            ];
+
+            if ($reschedDate) {
+                $updateData['appointment_date'] = $reschedDate;
+            }
+            if ($reschedStart && $reschedEnd) {
+                $updateData['start_time'] = strlen($reschedStart) === 5 ? $reschedStart . ':00' : $reschedStart;
+                $updateData['end_time'] = strlen($reschedEnd) === 5 ? $reschedEnd . ':00' : $reschedEnd;
+            }
+
+            $comment = $adminComment ?: ('Rescheduled' . ($reschedDate ? " to {$reschedDate}" : ''));
+            $updateData['admin_comment'] = $comment;
+
+            $appt->update($updateData);
+
+            return back()->with('success', 'Appointment marked as RESCHEDULED successfully.');
         } else {
             $appt->update([
                 'status' => 'rejected',
@@ -168,6 +226,7 @@ class CalendarController extends Controller
             'event_date' => 'required|date|after_or_equal:today',
             'end_date' => 'nullable|date|after_or_equal:event_date',
             'event_category' => 'required|in:meeting,busy,reminder,other',
+            'event_location' => 'nullable|string|max:255',
             'event_description' => 'nullable|string',
         ]);
 
@@ -175,11 +234,35 @@ class CalendarController extends Controller
             'title' => trim($request->input('event_title')),
             'event_date' => $request->input('event_date'),
             'end_date' => $request->input('end_date'),
+            'location' => trim($request->input('event_location', '')) ?: null,
             'description' => $request->input('event_description') ?: null,
             'category' => $request->input('event_category', 'other'),
         ]);
 
         return back()->with('success', 'Upcoming event added successfully!');
+    }
+
+    public function updateEvent(Request $request, AdminEvent $event)
+    {
+        $request->validate([
+            'event_title' => 'required|string|max:255',
+            'event_date' => 'required|date',
+            'end_date' => 'nullable|date|after_or_equal:event_date',
+            'event_category' => 'required|in:meeting,busy,reminder,other',
+            'event_location' => 'nullable|string|max:255',
+            'event_description' => 'nullable|string',
+        ]);
+
+        $event->update([
+            'title' => trim($request->input('event_title')),
+            'event_date' => $request->input('event_date'),
+            'end_date' => $request->input('end_date'),
+            'location' => trim($request->input('event_location', '')) ?: null,
+            'description' => $request->input('event_description') ?: null,
+            'category' => $request->input('event_category', 'other'),
+        ]);
+
+        return back()->with('success', 'Event updated successfully!');
     }
 
     public function destroyEvent(Request $request)

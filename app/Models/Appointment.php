@@ -123,4 +123,38 @@ class Appointment extends Model
         }
         return $this->status ?? 'pending';
     }
+
+    /**
+     * Get human-friendly label for current status.
+     */
+    public function getStatusLabelAttribute(): string
+    {
+        $st = $this->effective_status;
+        return match ($st) {
+            'completed'     => 'Completed',
+            'not_completed' => 'Not Completed',
+            'rescheduled'   => 'Rescheduled',
+            'accepted'      => 'Accepted',
+            'pending'       => 'Pending',
+            'rejected'      => 'Rejected',
+            'cancelled'     => 'Cancelled',
+            'expired'       => 'Expired',
+            default         => ucfirst($st)
+        };
+    }
+
+    /**
+     * Get CSS badge class for status.
+     */
+    public function getBadgeClassAttribute(): string
+    {
+        $st = $this->effective_status;
+        return match ($st) {
+            'completed', 'accepted' => 'complete-badge',
+            'rescheduled'           => 'progress-badge',
+            'not_completed', 'rejected' => 'overdue-badge',
+            'expired', 'cancelled'  => 'expired-badge',
+            default                 => 'pending-badge'
+        };
+    }
 }

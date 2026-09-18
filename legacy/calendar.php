@@ -430,12 +430,15 @@ $appBase = rtrim($scriptDir, '/');
                                     <?php if ($hasTasks): ?>
                                         <div class="cal-events">
                                             <?php foreach (array_slice($tasksByDay[$day], 0, 2) as $t):
+                                                $isPastTaskDate = !empty($t['deadline']) ? (date('Y-m-d', strtotime($t['deadline'])) < date('Y-m-d')) : false;
                                                 $sc = strtolower(str_replace(' ', '', $t['status']));
-                                                $ec = ($sc === 'inprogress') ? 'ev-progress' : 'ev-' . $sc;
+                                                $ec = ($t['status'] === 'Completed') ? 'ev-completed' : ($isPastTaskDate ? 'ev-expired' : (($sc === 'inprogress') ? 'ev-progress' : 'ev-' . $sc));
+                                                $faeDisplayName = $t['fae_name'] ?? '';
+                                                $taskLabel = $t['task_name'] . (!empty($faeDisplayName) ? " ({$faeDisplayName})" : '');
                                             ?>
                                                 <div class="cal-event <?= $ec ?>"
-                                                     title="Task: <?= htmlspecialchars($t['task_name']) ?> (<?= $t['progress'] ?>%)">
-                                                    ✓ <?= htmlspecialchars(mb_strimwidth($t['task_name'], 0, 12, '...')) ?>
+                                                     title="Task: <?= htmlspecialchars($taskLabel) ?> (<?= $t['progress'] ?>% - <?= htmlspecialchars($t['status'] ?? 'Pending') ?>)">
+                                                    ✓ <?= htmlspecialchars(mb_strimwidth($taskLabel, 0, 16, '...')) ?>
                                                 </div>
                                             <?php endforeach; ?>
                                         </div>
@@ -444,7 +447,7 @@ $appBase = rtrim($scriptDir, '/');
                                     <?php if ($hasAppts): ?>
                                         <div class="cal-events">
                                             <?php foreach (array_slice($apptsByDay[$day], 0, 2) as $a):
-                                                $apptClass = $a['status'] === 'rejected' ? 'ev-overdue' : ($a['status'] === 'accepted' ? 'ev-completed' : 'ev-appt');
+                                                $apptClass = $a['status'] === 'rejected' ? 'ev-overdue' : ($a['status'] === 'accepted' ? 'ev-accepted' : 'ev-appt');
                                             ?>
                                                 <div class="cal-event <?= $apptClass ?>"
                                                      title="Appointment: <?= htmlspecialchars($a['reason']) ?> (<?= $a['status'] ?>)">
@@ -854,7 +857,12 @@ document.querySelectorAll(".cal-cell:not(.cal-cell--empty)").forEach(function(ce
             if (dayTasks.length > 0) {
                 html += '<div style="margin-bottom:14px;"><strong>✓ Tasks Due:</strong><ul style="margin:6px 0 0 18px; padding:0; font-size:13px; color:var(--text-main);">';
                 dayTasks.forEach(function(t) {
-                    html += '<li style="margin-bottom:4px;"><strong>' + escHtml(t.task_name) + '</strong> - Progress: ' + t.progress + '% (' + escHtml(t.status) + ')</li>';
+                    var isPastTask = t.deadline ? (t.deadline < todayStr) : (dateStr < todayStr);
+                    var isCompleted = t.status === 'Completed';
+                    var isExpired = isPastTask && !isCompleted;
+                    var faeSuffix = t.fae_name ? ' <span style="color:#2563eb; font-weight:600;">(' + escHtml(t.fae_name) + ')</span>' : '';
+                    var taskLiStyle = (isCompleted || isExpired) ? 'margin-bottom:4px; color:#64748b; text-decoration:line-through; opacity:0.8;' : 'margin-bottom:4px;';
+                    html += '<li style="' + taskLiStyle + '"><strong>' + escHtml(t.task_name) + '</strong>' + faeSuffix + ' - Progress: ' + t.progress + '% (' + escHtml(t.status) + ')</li>';
                 });
                 html += '</ul></div>';
             }

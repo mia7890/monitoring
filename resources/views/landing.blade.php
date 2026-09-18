@@ -280,6 +280,26 @@
             flex-shrink: 0;
         }
 
+        .landing-shell .cal-cell--past {
+            background: #eef2f6 !important;
+            color: #94a3b8;
+            border-color: #e2e8f0;
+        }
+
+        .landing-shell .cal-cell--past .cal-day-num {
+            color: #94a3b8;
+            background: #e2e8f0;
+        }
+
+        .landing-shell .cal-cell--past:hover:not(.cal-cell--empty) {
+            background: #e2e8f0 !important;
+        }
+
+        .landing-shell .cal-cell--past .cal-event {
+            opacity: 0.65;
+            filter: grayscale(40%);
+        }
+
         .landing-shell .cal-cell--today .cal-day-num {
             background: var(--primary, #b52f32);
             color: #ffffff;
@@ -555,12 +575,15 @@
                                         @foreach (array_slice(is_array($tasksByDay[$day]) ? $tasksByDay[$day] : $tasksByDay[$day]->toArray(), 0, 2) as $t)
                                             @php
                                                 $tData = is_object($t) ? $t : (object)$t;
+                                                $isPastTaskDate = !empty($tData->deadline) ? (\Carbon\Carbon::parse($tData->deadline)->format('Y-m-d') < date('Y-m-d')) : false;
                                                 $sc = strtolower(str_replace(' ', '', $tData->status ?? 'pending'));
-                                                $ec = ($sc === 'inprogress') ? 'ev-progress' : 'ev-' . $sc;
+                                                $ec = ($tData->status === 'Completed') ? 'ev-completed' : ($isPastTaskDate ? 'ev-expired' : (($sc === 'inprogress') ? 'ev-progress' : 'ev-' . $sc));
+                                                $faeDisplayName = $tData->fae->name ?? ($tData->fae_name ?? '');
+                                                $taskLabel = $tData->task_name . (!empty($faeDisplayName) ? " ({$faeDisplayName})" : '');
                                             @endphp
                                             <div class="cal-event {{ $ec }}"
-                                                 title="Task: {{ $tData->task_name }} ({{ $tData->status ?? 'Pending' }} - {{ (int)($tData->progress ?? 0) }}%)">
-                                                ✓ {{ mb_strimwidth($tData->task_name, 0, 14, '...') }}
+                                                 title="Task: {{ $taskLabel }} ({{ $tData->status ?? 'Pending' }} - {{ (int)($tData->progress ?? 0) }}%)">
+                                                ✓ {{ mb_strimwidth($taskLabel, 0, 16, '...') }}
                                             </div>
                                         @endforeach
                                     </div>
@@ -572,7 +595,7 @@
                                         @foreach (array_slice(is_array($apptsByDay[$day]) ? $apptsByDay[$day] : $apptsByDay[$day]->toArray(), 0, 2) as $a)
                                             @php
                                                 $aData = is_object($a) ? $a : (object)$a;
-                                                $apptClass = ($aData->status === 'rejected') ? 'ev-overdue' : (($aData->status === 'accepted') ? 'ev-completed' : 'ev-appt');
+                                                $apptClass = ($aData->status === 'rejected') ? 'ev-overdue' : (($aData->status === 'accepted') ? 'ev-accepted' : 'ev-appt');
                                             @endphp
                                             <div class="cal-event {{ $apptClass }}"
                                                  title="Appointment: {{ $aData->time_slot ? '[' . $aData->time_slot . '] ' : '' }}{{ $aData->reason }} (Status: {{ ucfirst($aData->status) }})">
@@ -757,7 +780,12 @@
                     if (dayTasks.length > 0) {
                         html += '<div style="margin-bottom:14px;"><strong>Tasks Due:</strong><ul style="margin:6px 0 0 18px; padding:0; font-size:13px; color:var(--text-main);">';
                         dayTasks.forEach(function(t) {
-                            html += '<li style="margin-bottom:4px;"><strong>' + escHtml(t.task_name) + '</strong> - Assigned: ' + escHtml(t.fae_name) + ' [' + escHtml(t.status) + ', ' + t.progress + '%]</li>';
+                            var isPastTask = t.deadline ? (t.deadline < todayStr) : (dateStr < todayStr);
+                            var isCompleted = t.status === 'Completed';
+                            var isExpired = isPastTask && !isCompleted;
+                            var faeSuffix = t.fae_name ? ' <span style="color:#2563eb; font-weight:600;">(' + escHtml(t.fae_name) + ')</span>' : '';
+                            var taskLiStyle = (isCompleted || isExpired) ? 'margin-bottom:4px; color:#64748b; text-decoration:line-through; opacity:0.8;' : 'margin-bottom:4px;';
+                            html += '<li style="' + taskLiStyle + '"><strong>' + escHtml(t.task_name) + '</strong>' + faeSuffix + ' - Progress: ' + t.progress + '% (' + escHtml(t.status) + ')</li>';
                         });
                         html += '</ul></div>';
                     }

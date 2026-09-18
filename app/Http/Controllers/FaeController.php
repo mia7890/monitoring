@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\ContactApprovedMail;
+use App\Mail\ContactDirectMail;
 use App\Models\Department;
 use App\Models\FaeUser;
 use App\Models\Task;
@@ -157,6 +158,29 @@ class FaeController extends Controller
         $fae->delete();
 
         return redirect()->route('fae.index')->with('success', "Contact '{$name}' removed successfully.");
+    }
+
+    public function sendEmail(Request $request, FaeUser $fae)
+    {
+        $request->validate([
+            'subject' => 'required|string|max:255',
+            'message' => 'required|string',
+        ]);
+
+        if (empty($fae->email)) {
+            return back()->with('error', "Contact '{$fae->name}' does not have an email address configured.");
+        }
+
+        $subject = trim($request->input('subject'));
+        $body = trim($request->input('message'));
+
+        try {
+            Mail::to($fae->email)->send(new ContactDirectMail($fae->name, $subject, $body));
+            return back()->with('success', "Email sent successfully to {$fae->name} ({$fae->email})!");
+        } catch (\Throwable $e) {
+            Log::error("Failed to send direct email to {$fae->email}: " . $e->getMessage());
+            return back()->with('error', "Failed to send email: " . $e->getMessage());
+        }
     }
 
     private function generateUniqueCode(): string

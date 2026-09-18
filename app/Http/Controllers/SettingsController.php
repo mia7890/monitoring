@@ -15,11 +15,25 @@ class SettingsController extends Controller
     {
         $currentKey = MonitoringAuth::adminKey();
         $adminEmail = MonitoringAuth::adminEmail();
+        $adminName = MonitoringAuth::adminName();
 
         return view('settings.index', compact(
             'currentKey',
-            'adminEmail'
+            'adminEmail',
+            'adminName'
         ));
+    }
+
+    public function updateName(Request $request)
+    {
+        $request->validate([
+            'admin_name' => 'required|string|max:255',
+        ]);
+
+        $name = trim((string)$request->input('admin_name'));
+        Setting::set('admin_name', $name);
+
+        return back()->with('success', 'Administrator display name updated successfully!');
     }
 
     public function updateKey(Request $request)

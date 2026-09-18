@@ -40,6 +40,8 @@ Route::middleware(['auth.monitoring'])->group(function () {
     // Tasks
     Route::get('/tasks', [TaskController::class, 'index'])->name('tasks.index');
     Route::get('/tasks/timeline', [TaskController::class, 'getTimeline'])->name('tasks.timeline');
+    Route::get('/tasks/{task}/report', [TaskController::class, 'report'])->name('tasks.report');
+    Route::get('/tasks-export-report', [TaskController::class, 'exportSummaryReport'])->name('tasks.exportReport');
     Route::post('/tasks/update-progress/{task}', [TaskController::class, 'updateProgress'])->name('tasks.updateProgress');
     Route::post('/tasks/store-update', [TaskController::class, 'storeUpdate'])->name('tasks.storeUpdate');
     Route::post('/profile/update-photo', [ProfileController::class, 'updatePhoto'])->name('profile.updatePhoto');
@@ -79,10 +81,15 @@ Route::middleware(['auth.monitoring'])->group(function () {
         // Calendar Admin features
         Route::post('/calendar/appointment-status', [CalendarController::class, 'updateAppointmentStatus'])->name('calendar.updateAppointmentStatus');
         Route::post('/calendar/events', [CalendarController::class, 'storeEvent'])->name('calendar.events.store');
+        Route::put('/calendar/events/{event}', [CalendarController::class, 'updateEvent'])->name('calendar.events.update');
         Route::post('/calendar/events/delete', [CalendarController::class, 'destroyEvent'])->name('calendar.events.destroy');
+
+        // FAE Direct Email
+        Route::post('/fae/{fae}/send-email', [FaeController::class, 'sendEmail'])->name('fae.sendEmail');
 
         // Settings
         Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+        Route::post('/settings/update-name', [SettingsController::class, 'updateName'])->name('settings.updateName');
         Route::post('/settings/update-key', [SettingsController::class, 'updateKey'])->name('settings.updateKey');
         Route::post('/settings/test-smtp', [SettingsController::class, 'testSmtp'])->name('settings.testSmtp');
     });

@@ -35,14 +35,19 @@
 
     <!-- ================= SIDEBAR ================= -->
     <aside class="sidebar" id="sidebar">
-        <div class="logo">
-            <div class="logo-icon">
-                <img src="{{ asset('logo.png') }}" alt="Monitoring System logo">
+        <div class="logo" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div class="logo-icon">
+                    <img src="{{ asset('logo.png') }}" alt="Monitoring System logo">
+                </div>
+                <div class="logo-text">
+                    <h2>Hytec Power inc.</h2>
+                    <span>Monitoring</span>
+                </div>
             </div>
-            <div class="logo-text">
-                <h2>Hytec Power inc.</h2>
-                <span>Monitoring</span>
-            </div>
+            <button type="button" class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close menu">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
         </div>
 
         <nav class="navigation">
@@ -131,6 +136,7 @@
             </div>
         </div>
     </aside>
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
     <!-- ================= MAIN CONTENT ================= -->
     <main class="main">
@@ -169,54 +175,48 @@
                         @if($notificationCount === 0)
                             <span class="notification-empty">No new notifications.</span>
                         @else
-                            @foreach(array_slice($notificationItems, 0, 8) as $item)
+                            @foreach(array_slice($notificationItems, 0, 10) as $item)
                                 @php
-                                    $type = $item['type'];
-                                    $title = $item['title'];
-                                    $date = $item['date'];
-                                    
-                                    // Extract FAE name and description from title
-                                    $faeName = '';
-                                    $description = '';
-                                    
-                                    if ($type === 'FAE Progress Report') {
-                                        // Format: "FAE Name on \"Task Name\": message"
-                                        if (preg_match('/^([^"]+)\s+on\s+"([^"]+)"\:\s*(.*)$/', $title, $matches)) {
-                                            $faeName = trim($matches[1]);
-                                            $description = $matches[3];
-                                        }
-                                    } elseif ($type === 'Admin Remark') {
-                                        // Format: "Admin on \"Task Name\": message"
-                                        if (preg_match('/^Admin\s+on\s+"([^"]+)"\:\s*(.*)$/', $title, $matches)) {
-                                            $faeName = 'Administrator';
-                                            $description = $matches[2];
-                                        }
-                                    } elseif ($type === 'Assigned task' || $type === 'Overdue task') {
-                                        $description = $title;
-                                        $faeName = '';
-                                    } elseif ($type === 'Appointment request') {
-                                        $description = $title;
-                                        $faeName = '';
-                                    }
+                                    $type = $item['type'] ?? 'Notification';
+                                    $title = $item['title'] ?? '';
+                                    $description = $item['description'] ?? '';
+                                    $adminNotes = $item['admin_notes'] ?? '';
+                                    $date = $item['date'] ?? null;
+                                    $taskId = $item['task_id'] ?? null;
+                                    $authorName = $item['author_name'] ?? null;
+                                    $badgeColor = $item['badge_color'] ?? '#3b82f6';
                                 @endphp
-                                <div style="background: rgba(59,130,246,0.05); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 8px; transition: all 0.2s ease;">
-                                    <div style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px;">
-                                        <span style="color: var(--primary); font-size: 8px; font-weight: 700; text-transform: uppercase; background: rgba(59,130,246,0.15); padding: 3px 6px; border-radius: 4px; flex-shrink: 0;">{{ $type }}</span>
-                                        @if(!empty($faeName))
-                                            <span style="color: white; font-size: 10px; font-weight: 700; background: var(--primary); padding: 3px 8px; border-radius: 4px; flex-shrink: 0;">{{ $faeName }}</span>
+                                <div style="background: rgba(248,250,252,0.95); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; transition: all 0.2s ease; position:relative;">
+                                    <div style="display: flex; align-items: center; justify-content:space-between; gap: 8px; margin-bottom: 6px;">
+                                        <span style="color: {{ $badgeColor }}; font-size: 9px; font-weight: 800; text-transform: uppercase; background: rgba(59,130,246,0.08); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(59,130,246,0.15); flex-shrink: 0;">{{ $type }}</span>
+                                        @if(!empty($authorName))
+                                            <span style="color: var(--text-muted); font-size: 10px; font-weight: 600;">{{ $authorName }}</span>
                                         @endif
                                     </div>
                                     
+                                    <strong style="display:block; font-size:11px; color:var(--text); margin-bottom:4px; line-height:1.3;">
+                                        {{ $title }}
+                                    </strong>
+
                                     @if(!empty($description))
-                                        <p style="margin: 0 0 8px 0; font-size: 11px; color: var(--text); line-height: 1.4;">{{ $description }}</p>
+                                        <p style="margin: 0 0 6px 0; font-size: 11px; color: var(--text-secondary); line-height: 1.4;">{{ $description }}</p>
                                     @endif
-                                    
-                                    @if(!empty($date))
-                                        <div style="display: flex; align-items: center; gap: 4px; font-size: 9px; color: var(--text-light);">
-                                            <span style="font-weight: 600;">Date:</span>
-                                            <span>{{ date('M d, Y • H:i', strtotime($date)) }}</span>
+
+                                    @if(!empty($adminNotes))
+                                        <div style="background: rgba(220,38,38,0.06); border-left: 3px solid var(--primary); padding: 6px 8px; border-radius: 4px; margin-bottom: 6px;">
+                                            <span style="font-size: 9px; font-weight: 800; color: var(--primary); text-transform: uppercase; display: block;">Admin Note:</span>
+                                            <span style="font-size: 11px; color: var(--text); line-height: 1.3;">{{ $adminNotes }}</span>
                                         </div>
                                     @endif
+                                    
+                                    <div style="display: flex; align-items: center; justify-content:space-between; gap: 6px; font-size: 9px; color: var(--text-light); margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(0,0,0,0.04);">
+                                        <span>{{ !empty($date) ? date('M d, Y • h:i A', strtotime($date)) : '' }}</span>
+                                        @if(!empty($taskId))
+                                            <a href="{{ route('tasks.index') }}?view_task={{ $taskId }}" style="color:var(--primary); font-weight:700; text-decoration:none; font-size:10px;">
+                                                View Task Details &rarr;
+                                            </a>
+                                        @endif
+                                    </div>
                                 </div>
                             @endforeach
                         @endif
@@ -241,7 +241,7 @@
                         </span>
                     </div>
                     <div class="profile-info">
-                        <strong>{{ $isAdmin ? 'Administrator' : $currentFaeName }}</strong>
+                        <strong>{{ $isAdmin ? MonitoringAuth::adminName() : $currentFaeName }}</strong>
                         <span>{{ $isAdmin ? 'Full Management' : ($currentFaeCode ?: 'Field Engineer') }}</span>
                     </div>
                 </div>
@@ -336,14 +336,87 @@
         if (modal) modal.classList.remove("active");
     }
 
-    // Responsive Mobile Menu Toggle
+    // Responsive Mobile Menu Toggle & Backdrop Dismissal
     const menuToggle = document.getElementById('menuToggle');
     const sidebar = document.getElementById('sidebar');
-    if (menuToggle && sidebar) {
-        menuToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('open');
+    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+    const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
+
+    function openSidebar() {
+        if (sidebar) sidebar.classList.add('open');
+        if (sidebarBackdrop) sidebarBackdrop.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+        if (sidebar) sidebar.classList.remove('open');
+        if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    if (menuToggle) {
+        menuToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (sidebar && sidebar.classList.contains('open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
         });
     }
+
+    if (sidebarCloseBtn) {
+        sidebarCloseBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeSidebar();
+        });
+    }
+
+    if (sidebarBackdrop) {
+        sidebarBackdrop.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeSidebar();
+        });
+        sidebarBackdrop.addEventListener('touchstart', (e) => {
+            e.stopPropagation();
+            closeSidebar();
+        }, { passive: true });
+    }
+
+    // Dismiss sidebar when clicking or tapping anywhere outside the sidebar
+    function handleOutsideInteraction(e) {
+        if (sidebar && sidebar.classList.contains('open')) {
+            if (!sidebar.contains(e.target) && (!menuToggle || !menuToggle.contains(e.target))) {
+                closeSidebar();
+            }
+        }
+    }
+
+    document.addEventListener('click', handleOutsideInteraction);
+    document.addEventListener('touchstart', handleOutsideInteraction, { passive: true });
+
+    // Auto-close sidebar when clicking any navigation link on mobile
+    document.querySelectorAll('.sidebar .nav-item').forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth <= 900) {
+                closeSidebar();
+            }
+        });
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sidebar && sidebar.classList.contains('open')) {
+            closeSidebar();
+        }
+    });
+
+    // Auto-close if screen is resized back to desktop
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 900) {
+            closeSidebar();
+        }
+    });
 
     // Notification dropdown dismiss & view tracking
     const notificationWrap = document.getElementById("notificationWrap");

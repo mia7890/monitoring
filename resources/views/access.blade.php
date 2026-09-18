@@ -208,10 +208,10 @@
                 @csrf
                 <input type="hidden" name="access_type" value="fae">
                 <span class="access-kicker">CONTACT</span>
-                <h2>Contact workspace</h2>
+                <h2>Contacts Workpace</h2>
                 <p>See only your assigned work and request time with the admin.</p>
                 <label class="form-label" for="fae_code">Access Code</label>
-                <input class="form-control" id="fae_code" name="fae_code" required autocomplete="off" placeholder="e.g. CTC-A8B2X" autofocus>
+                <input type="password" class="form-control" id="fae_code" name="fae_code" required autocomplete="off" placeholder="e.g. CTC-A8B2X" autofocus>
                 <button class="primary-button access-button" type="submit">Open my workspace</button>
             </form>
 

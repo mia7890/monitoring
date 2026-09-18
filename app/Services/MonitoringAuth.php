@@ -59,6 +59,16 @@ class MonitoringAuth
     }
 
 
+    public static function adminName(): string
+    {
+        $dbName = Setting::get('admin_name');
+        if (is_string($dbName) && trim($dbName) !== '') {
+            return trim($dbName);
+        }
+
+        return 'Administrator';
+    }
+
     public static function adminEmail(): ?string
     {
         $dbEmail = Setting::get('admin_email');

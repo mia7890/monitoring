@@ -73,14 +73,16 @@ class CalendarDataBuilder
 
         $apptsByDay = [];
         $bookedDays = [];
+        $dayScheduleCounts = [];
 
         foreach ($apptsQuery->orderBy('appointment_date', 'asc')->get() as $appt) {
             if ($appt->appointment_date) {
                 $day = (int)$appt->appointment_date->format('j');
                 $apptsByDay[$day][] = $appt;
 
-                if (in_array($appt->status, ['pending', 'accepted'], true)) {
+                if (in_array($appt->status, ['pending', 'accepted', 'rescheduled', 'completed'], true)) {
                     $bookedDays[$day] = $appt;
+                    $dayScheduleCounts[$day] = ($dayScheduleCounts[$day] ?? 0) + 1;
                 }
             }
         }
@@ -112,12 +114,21 @@ class CalendarDataBuilder
                 for ($d = clone $plotStart; $d <= $plotEnd; $d->modify('+1 day')) {
                     $day = (int)$d->format('j');
                     $adminEventsByDay[$day][] = $evt;
+                    $dayScheduleCounts[$day] = ($dayScheduleCounts[$day] ?? 0) + 1;
 
                     if ($evt->category === 'busy') {
                         $busyDays[$day] = true;
                         $bookedDays[$day] = (object)['status' => 'busy'];
                     }
                 }
+            }
+        }
+
+        // Determine days that have reached the 2-schedule limitation
+        $limitReachedDays = [];
+        foreach ($dayScheduleCounts as $day => $count) {
+            if ($count >= 2) {
+                $limitReachedDays[$day] = true;
             }
         }
 
@@ -143,6 +154,8 @@ class CalendarDataBuilder
             'bookedDays',
             'adminEventsByDay',
             'busyDays',
+            'dayScheduleCounts',
+            'limitReachedDays',
             'upcomingEvents'
         );
 

@@ -510,6 +510,24 @@ textarea {
 .stat-card {
     background: var(--surface);
     padding: 18px 20px;
+    display: block;
+    transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.stat-card.clickable-stat-card {
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+}
+
+.stat-card.clickable-stat-card:hover {
+    background: #ffffff;
+    box-shadow: inset 0 -3px 0 var(--primary);
+}
+
+.stat-card.clickable-stat-card:hover .stat-label {
+    color: var(--primary);
 }
 
 .stat-card:hover {
@@ -1085,6 +1103,49 @@ footer {
 }
 
 
+.sidebar-close-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.sidebar-close-btn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.6);
+    z-index: 9998;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.sidebar-backdrop.active,
+.sidebar.open ~ .sidebar-backdrop {
+    display: block;
+    opacity: 1;
+}
+
 /* =========================================================
    RESPONSIVE
    ========================================================= */
@@ -1096,12 +1157,29 @@ footer {
 
 @media (max-width: 900px) {
     .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        height: 100vh;
+        height: 100dvh;
+        width: 260px;
+        max-width: 82vw;
         transform: translateX(-100%);
-        transition: transform 0.2s ease;
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 9999;
+        box-shadow: none;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
     .sidebar.open {
         transform: translateX(0);
+        box-shadow: 4px 0 35px rgba(0, 0, 0, 0.55);
+    }
+
+    .sidebar-close-btn {
+        display: flex;
     }
 
     .main {
@@ -1124,6 +1202,8 @@ footer {
     .content { padding: 14px 12px; }
     .page-intro h1 { font-size: 18px; }
     .quick-actions { grid-template-columns: 1fr; }
+    .fae-grid { grid-template-columns: 1fr; gap: 12px; }
+    .fae-card-actions { flex-wrap: wrap; }
     footer { flex-direction: column; gap: 4px; }
 }
 

@@ -16,6 +16,7 @@ class AdminEvent extends Model
         'event_date',
         'end_date',
         'description',
+        'location',
         'category',
     ];
 
