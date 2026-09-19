@@ -71,17 +71,31 @@ class MonitoringAuth
 
     public static function adminEmail(): ?string
     {
-        $dbEmail = Setting::get('admin_email');
-        if (is_string($dbEmail) && trim($dbEmail) !== '') {
-            return trim($dbEmail);
+        $emails = self::adminEmails();
+        return !empty($emails) ? implode(', ', $emails) : null;
+    }
+
+    public static function adminEmails(): array
+    {
+        $raw = Setting::get('admin_email');
+        if (!is_string($raw) || trim($raw) === '') {
+            $raw = config('monitoring.admin_email');
         }
 
-        $email = config('monitoring.admin_email');
-        if (is_string($email) && trim($email) !== '') {
-            return trim($email);
+        if (!is_string($raw) || trim($raw) === '') {
+            return [];
         }
 
-        return null;
+        $parts = preg_split('/[\s,;]+/', $raw);
+        $emails = [];
+        foreach ($parts as $part) {
+            $cleaned = trim($part);
+            if (filter_var($cleaned, FILTER_VALIDATE_EMAIL)) {
+                $emails[] = $cleaned;
+            }
+        }
+
+        return array_values(array_unique($emails));
     }
 
     public static function currentFae(): ?FaeUser

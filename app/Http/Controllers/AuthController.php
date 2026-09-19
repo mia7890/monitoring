@@ -138,9 +138,9 @@ class AuthController extends Controller
 
     public function forgotKey()
     {
-        $adminEmail = MonitoringAuth::adminEmail();
+        $adminEmails = MonitoringAuth::adminEmails();
 
-        if (!$adminEmail) {
+        if (empty($adminEmails)) {
             return back()->with('error', 'Admin email recovery is not configured. Contact your system administrator.');
         }
 
@@ -149,8 +149,12 @@ class AuthController extends Controller
         }
 
         try {
-            Mail::to($adminEmail)->send(new AdminKeyMail(MonitoringAuth::adminKey()));
-            return back()->with('success', 'The admin key has been sent to the registered admin email address.');
+            Mail::to($adminEmails)->send(new AdminKeyMail(MonitoringAuth::adminKey()));
+            $count = count($adminEmails);
+            $msg = $count > 1 
+                ? 'The admin key has been sent to all registered administrator email addresses.' 
+                : 'The admin key has been sent to the registered admin email address.';
+            return back()->with('success', $msg);
         } catch (\Throwable $e) {
             Log::error('Failed to send admin key recovery email via SMTP: ' . $e->getMessage());
             return back()->with('error', 'Failed to send recovery email via SMTP: ' . $e->getMessage());
