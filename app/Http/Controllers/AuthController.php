@@ -149,6 +149,10 @@ class AuthController extends Controller
         }
 
         try {
+            @ini_set('default_socket_timeout', '5');
+            config(['mail.mailers.smtp.timeout' => 5]);
+            Mail::purge('smtp');
+
             Mail::to($adminEmails)->send(new AdminKeyMail(MonitoringAuth::adminKey()));
             $count = count($adminEmails);
             $msg = $count > 1 

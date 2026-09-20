@@ -65,6 +65,10 @@ class SettingsController extends Controller
         $recipient = trim((string)$request->input('recipient'));
 
         try {
+            @ini_set('default_socket_timeout', '5');
+            config(['mail.mailers.smtp.timeout' => 5]);
+            Mail::purge('smtp');
+
             Mail::to($recipient)->send(new TestSmtpMail($recipient));
             return back()->with('success', "Test email sent successfully to {$recipient} via SMTP!");
         } catch (\Throwable $e) {
