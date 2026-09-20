@@ -11,6 +11,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->trustProxies(at: '*');
+
         $middleware->alias([
             'auth.monitoring' => \App\Http\Middleware\RequireMonitoringAccess::class,
             'admin.monitoring' => \App\Http\Middleware\RequireAdminRole::class,
