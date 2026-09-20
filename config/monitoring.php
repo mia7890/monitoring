@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'admin_key' => env('MONITORING_ADMIN_KEY'),
+    'admin_key' => env('MONITORING_ADMIN_KEY', 'Admin12345!'),
 
     /*
     |--------------------------------------------------------------------------
@@ -26,6 +26,6 @@ return [
     |
     */
 
-    'admin_email' => env('MONITORING_ADMIN_EMAIL'),
+    'admin_email' => env('MONITORING_ADMIN_EMAIL', 'sevilla.princeescort.ortega@gmail.com'),
 
 ];
