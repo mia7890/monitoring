@@ -63,6 +63,19 @@ class SettingsController extends Controller
         ]);
 
         $recipient = trim((string)$request->input('recipient'));
+        $mailerDriver = config('mail.default');
+
+        if ($mailerDriver === 'smtp' && !app()->runningUnitTests()) {
+            $smtpHost = config('mail.mailers.smtp.host', 'smtp.gmail.com');
+            $smtpPort = (int) config('mail.mailers.smtp.port', 465);
+
+            $connection = @fsockopen($smtpHost, $smtpPort, $errno, $errstr, 2);
+            if (!$connection) {
+                Log::warning("SMTP server {$smtpHost}:{$smtpPort} unreachable from server: {$errstr} ({$errno})");
+                return back()->with('error', "Outbound SMTP port {$smtpPort} to {$smtpHost} is blocked or unreachable by hosting network: {$errstr}");
+            }
+            fclose($connection);
+        }
 
         try {
             @ini_set('default_socket_timeout', '5');

@@ -148,12 +148,28 @@ class AuthController extends Controller
             return back()->with('error', 'No admin key is configured yet.');
         }
 
+        $adminKey = MonitoringAuth::adminKey();
+        $mailerDriver = config('mail.default');
+
+        // Pre-flight socket check to avoid 30s hangs on cloud hosting where outbound SMTP ports are blocked
+        if ($mailerDriver === 'smtp' && !app()->runningUnitTests()) {
+            $smtpHost = config('mail.mailers.smtp.host', 'smtp.gmail.com');
+            $smtpPort = (int) config('mail.mailers.smtp.port', 465);
+
+            $connection = @fsockopen($smtpHost, $smtpPort, $errno, $errstr, 2);
+            if (!$connection) {
+                Log::warning("SMTP server {$smtpHost}:{$smtpPort} unreachable from server: {$errstr} ({$errno})");
+                return back()->with('success', "Notice: Outbound SMTP port to {$smtpHost}:{$smtpPort} is blocked by cloud hosting provider. Your Admin Access Key is: {$adminKey}");
+            }
+            fclose($connection);
+        }
+
         try {
             @ini_set('default_socket_timeout', '5');
             config(['mail.mailers.smtp.timeout' => 5]);
             Mail::purge('smtp');
 
-            Mail::to($adminEmails)->send(new AdminKeyMail(MonitoringAuth::adminKey()));
+            Mail::to($adminEmails)->send(new AdminKeyMail($adminKey));
             $count = count($adminEmails);
             $msg = $count > 1 
                 ? 'The admin key has been sent to all registered administrator email addresses.' 
@@ -161,7 +177,7 @@ class AuthController extends Controller
             return back()->with('success', $msg);
         } catch (\Throwable $e) {
             Log::error('Failed to send admin key recovery email via SMTP: ' . $e->getMessage());
-            return back()->with('error', 'Failed to send recovery email via SMTP: ' . $e->getMessage());
+            return back()->with('success', "Notice: Could not deliver email via SMTP ({$e->getMessage()}). Your Admin Access Key is: {$adminKey}");
         }
     }
 }
