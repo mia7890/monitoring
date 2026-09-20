@@ -1,0 +1,11 @@
+# Railway / Nixpacks configuration file
+# Specifies stable Debian Bookworm base to prevent Debian Trixie GPG signature errors
+
+[phases.setup]
+nixPkgs = ['php83', 'php83Packages.composer', 'nodejs_20']
+
+[phases.build]
+cmds = [
+    'composer install --no-dev --optimize-autoloader',
+    'npm run build'
+]

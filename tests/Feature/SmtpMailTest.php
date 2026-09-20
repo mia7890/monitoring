@@ -36,6 +36,12 @@ class SmtpMailTest extends TestCase
         });
     }
 
+    public function test_forgot_admin_key_get_request_redirects_to_access(): void
+    {
+        $response = $this->get('/forgot-admin-key');
+        $response->assertRedirect(route('access'));
+    }
+
     public function test_admin_can_send_test_smtp_email_from_settings(): void
     {
         Mail::fake();
