@@ -18,6 +18,9 @@ Route::get('/', [LandingController::class, 'index'])->name('landing');
 
 // Authentication routes
 Route::get('/access', [AuthController::class, 'showAccess'])->name('access');
+Route::get('/login', function () {
+    return redirect()->route('access');
+});
 Route::post('/login', [AuthController::class, 'login'])->name('login')->middleware('throttle:monitoring-login');
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::post('/forgot-admin-key', [AuthController::class, 'forgotKey'])->name('forgot.admin.key')->middleware('throttle:3,5');
