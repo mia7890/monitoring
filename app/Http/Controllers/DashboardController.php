@@ -123,10 +123,12 @@ class DashboardController extends Controller
 
     /**
      * Build chart datasets for Day (14 days), Week (Month weeks), and Month (Year months).
+     * Optimized to calculate in PHP memory with zero loop queries.
      */
     private function buildChartData($taskBase): array
     {
         $now = Carbon::now();
+        $allTasks = (clone $taskBase)->select(['id', 'status', 'created_at', 'updated_at'])->get();
 
         // 1. DAY MODE: Last 14 days
         $dayLabels = [];
@@ -137,18 +139,19 @@ class DashboardController extends Controller
             $dayLabels[] = $date->format('d.m');
             $cutoff = $date->copy()->endOfDay();
 
-            $total = (clone $taskBase)
-                ->where(function ($q) use ($cutoff) {
-                    $q->whereNull('created_at')
-                      ->orWhere('created_at', '<=', $cutoff);
-                })->count();
+            $total = 0;
+            $completed = 0;
+            foreach ($allTasks as $task) {
+                $createdAt = $task->created_at ? Carbon::parse($task->created_at) : null;
+                $updatedAt = $task->updated_at ? Carbon::parse($task->updated_at) : null;
 
-            $completed = (clone $taskBase)
-                ->where('status', 'Completed')
-                ->where(function ($q) use ($cutoff) {
-                    $q->whereNull('updated_at')
-                      ->orWhere('updated_at', '<=', $cutoff);
-                })->count();
+                if ($createdAt === null || $createdAt->lte($cutoff)) {
+                    $total++;
+                    if ($task->status === 'Completed' && ($updatedAt === null || $updatedAt->lte($cutoff))) {
+                        $completed++;
+                    }
+                }
+            }
 
             $dayTotal[] = $total;
             $dayCompleted[] = $completed;
@@ -175,18 +178,19 @@ class DashboardController extends Controller
             $cutoff = Carbon::create($now->year, $now->month, min($w['end'], $daysThisMonth))->endOfDay();
             $effectiveCutoff = $cutoff->isFuture() ? $now->copy()->endOfDay() : $cutoff;
 
-            $total = (clone $taskBase)
-                ->where(function ($q) use ($effectiveCutoff) {
-                    $q->whereNull('created_at')
-                      ->orWhere('created_at', '<=', $effectiveCutoff);
-                })->count();
+            $total = 0;
+            $completed = 0;
+            foreach ($allTasks as $task) {
+                $createdAt = $task->created_at ? Carbon::parse($task->created_at) : null;
+                $updatedAt = $task->updated_at ? Carbon::parse($task->updated_at) : null;
 
-            $completed = (clone $taskBase)
-                ->where('status', 'Completed')
-                ->where(function ($q) use ($effectiveCutoff) {
-                    $q->whereNull('updated_at')
-                      ->orWhere('updated_at', '<=', $effectiveCutoff);
-                })->count();
+                if ($createdAt === null || $createdAt->lte($effectiveCutoff)) {
+                    $total++;
+                    if ($task->status === 'Completed' && ($updatedAt === null || $updatedAt->lte($effectiveCutoff))) {
+                        $completed++;
+                    }
+                }
+            }
 
             $weekTotal[] = $total;
             $weekCompleted[] = $completed;
@@ -203,18 +207,19 @@ class DashboardController extends Controller
             $monthEnd = $mDate->copy()->endOfMonth();
             $effectiveCutoff = $monthEnd->isFuture() ? $now->copy()->endOfDay() : $monthEnd;
 
-            $total = (clone $taskBase)
-                ->where(function ($q) use ($effectiveCutoff) {
-                    $q->whereNull('created_at')
-                      ->orWhere('created_at', '<=', $effectiveCutoff);
-                })->count();
+            $total = 0;
+            $completed = 0;
+            foreach ($allTasks as $task) {
+                $createdAt = $task->created_at ? Carbon::parse($task->created_at) : null;
+                $updatedAt = $task->updated_at ? Carbon::parse($task->updated_at) : null;
 
-            $completed = (clone $taskBase)
-                ->where('status', 'Completed')
-                ->where(function ($q) use ($effectiveCutoff) {
-                    $q->whereNull('updated_at')
-                      ->orWhere('updated_at', '<=', $effectiveCutoff);
-                })->count();
+                if ($createdAt === null || $createdAt->lte($effectiveCutoff)) {
+                    $total++;
+                    if ($task->status === 'Completed' && ($updatedAt === null || $updatedAt->lte($effectiveCutoff))) {
+                        $completed++;
+                    }
+                }
+            }
 
             $monthTotal[] = $total;
             $monthCompleted[] = $completed;
