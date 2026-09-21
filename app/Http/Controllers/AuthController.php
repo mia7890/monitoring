@@ -149,24 +149,10 @@ class AuthController extends Controller
         }
 
         $adminKey = MonitoringAuth::adminKey();
-        $mailerDriver = config('mail.default');
-
-        // Pre-flight socket check to avoid 30s hangs on cloud hosting where outbound SMTP ports are blocked
-        if ($mailerDriver === 'smtp' && !app()->runningUnitTests()) {
-            $smtpHost = config('mail.mailers.smtp.host', 'smtp.gmail.com');
-            $smtpPort = (int) config('mail.mailers.smtp.port', 465);
-
-            $connection = @fsockopen($smtpHost, $smtpPort, $errno, $errstr, 2);
-            if (!$connection) {
-                Log::warning("SMTP server {$smtpHost}:{$smtpPort} unreachable from server: {$errstr} ({$errno})");
-                return back()->with('success', "Notice: Outbound SMTP port to {$smtpHost}:{$smtpPort} is blocked by cloud hosting provider. Your Admin Access Key is: {$adminKey}");
-            }
-            fclose($connection);
-        }
 
         try {
-            @ini_set('default_socket_timeout', '5');
-            config(['mail.mailers.smtp.timeout' => 5]);
+            @ini_set('default_socket_timeout', '15');
+            config(['mail.mailers.smtp.timeout' => 15]);
             Mail::purge('smtp');
 
             Mail::to($adminEmails)->send(new AdminKeyMail($adminKey));
