@@ -127,18 +127,12 @@ class FaeController extends Controller
 
         $emailMsg = '';
         if ($fae->email) {
-            $smtpFailure = SmtpConnectivity::failureReason();
-            if ($smtpFailure !== null) {
-                Log::warning('Contact approval email skipped: ' . $smtpFailure);
-                $emailMsg = " Warning: Email delivery skipped ({$smtpFailure}). Access Code is {$accessCode}.";
-            } else {
-                try {
-                    Mail::to($fae->email)->send(new ContactApprovedMail($fae->name, $accessCode));
-                    $emailMsg = " Access Code sent via email to {$fae->email}.";
-                } catch (\Throwable $e) {
-                    Log::error('Failed to send contact approval email: ' . $e->getMessage());
-                    $emailMsg = " Warning: Email sending failed (" . $e->getMessage() . "). Access Code is {$accessCode}.";
-                }
+            try {
+                Mail::to($fae->email)->send(new ContactApprovedMail($fae->name, $accessCode));
+                $emailMsg = " Access Code sent via email to {$fae->email}.";
+            } catch (\Throwable $e) {
+                Log::error('Failed to send contact approval email: ' . $e->getMessage());
+                $emailMsg = " Warning: Email sending failed (" . $e->getMessage() . "). Access Code is {$accessCode}.";
             }
         }
 
@@ -180,12 +174,6 @@ class FaeController extends Controller
 
         $subject = trim($request->input('subject'));
         $body = trim($request->input('message'));
-
-        $smtpFailure = SmtpConnectivity::failureReason();
-        if ($smtpFailure !== null) {
-            Log::warning("Direct email skipped for {$fae->email}: {$smtpFailure}");
-            return back()->with('error', "Email delivery is unavailable: {$smtpFailure}");
-        }
 
         try {
             Mail::to($fae->email)->send(new ContactDirectMail($fae->name, $subject, $body));

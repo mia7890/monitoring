@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\AdminKeyMail;
+use App\Mail\ContactApprovedMail;
 use App\Models\Department;
 use App\Models\FaeUser;
 use App\Models\Setting;
@@ -11,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -40,29 +42,52 @@ class AuthController extends Controller
             'department_id.required' => 'Please select your department.',
         ]);
 
+        $name = trim((string)$request->input('name'));
         $email = strtolower(trim((string)$request->input('email')));
         
         // Check if email already registered
         $existing = FaeUser::where('email', $email)->first();
         if ($existing) {
-            if ($existing->isPending()) {
-                return back()->withInput()->with('error', 'A registration with this email address is already pending administrator approval.');
-            }
             if ($existing->isApproved()) {
-                return back()->withInput()->with('error', 'This email address is already registered and active. Please log in with your Access Code.');
+                return back()->withInput()->with('error', 'This email address is already registered. Your Access Code is: ' . $existing->fae_code . '. Please log in with this code.');
+            }
+            if ($existing->isPending()) {
+                $accessCode = $existing->fae_code ?: $this->generateUniqueCode();
+                $existing->update([
+                    'status' => 'approved',
+                    'fae_code' => $accessCode,
+                ]);
+                try {
+                    Mail::to($email)->send(new ContactApprovedMail($existing->name, $accessCode));
+                } catch (\Throwable $e) {
+                    Log::error('Registration email delivery error: ' . $e->getMessage());
+                }
+                return redirect()->route('access')->with('success', "Registration approved! Your Access Code is: {$accessCode}. A copy has been sent to {$email}.");
             }
         }
 
+        $accessCode = $this->generateUniqueCode();
+
         FaeUser::create([
-            'name' => trim((string)$request->input('name')),
+            'name' => $name,
             'email' => $email,
             'phone' => trim((string)$request->input('phone', '')),
             'department_id' => $request->input('department_id') ? (int)$request->input('department_id') : null,
-            'status' => 'pending',
-            'fae_code' => null, // Code generated upon admin approval
+            'status' => 'approved',
+            'fae_code' => $accessCode,
         ]);
 
-        return redirect()->route('access')->with('success', 'Registration submitted successfully! Your account is currently pending administrator approval. Once approved, your Access Code will be sent to ' . $email . '.');
+        $emailSent = false;
+        try {
+            Mail::to($email)->send(new ContactApprovedMail($name, $accessCode));
+            $emailSent = true;
+        } catch (\Throwable $e) {
+            Log::error('Registration instant email error: ' . $e->getMessage());
+        }
+
+        $msg = "Registration successful! Your Access Code is: {$accessCode}. " . ($emailSent ? "An email has also been sent to {$email}." : "Please save this Access Code to log in.");
+
+        return redirect()->route('access')->with('success', $msg);
     }
 
     public function login(Request $request)
@@ -160,8 +185,17 @@ class AuthController extends Controller
                 : 'The admin key has been sent to the registered admin email address.';
             return back()->with('success', $msg);
         } catch (\Throwable $e) {
-            Log::error('Failed to send admin key recovery email via SMTP: ' . $e->getMessage());
-            return back()->with('success', "Notice: Could not deliver email via SMTP ({$e->getMessage()}). Your Admin Access Key is: {$adminKey}");
+            Log::error('Failed to send admin key recovery email: ' . $e->getMessage());
+            return back()->with('success', "Notice: Could not deliver email ({$e->getMessage()}). Your Admin Access Key is: {$adminKey}");
         }
+    }
+
+    private function generateUniqueCode(): string
+    {
+        do {
+            $code = 'CTC-' . strtoupper(Str::random(5));
+        } while (FaeUser::where('fae_code', $code)->exists());
+
+        return $code;
     }
 }
