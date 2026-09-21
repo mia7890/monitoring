@@ -90,10 +90,10 @@ For a no-domain Resend test, add these values as Railway Variables:
 ```ini
 MAIL_MAILER=smtp
 MAIL_HOST=smtp.resend.com
-MAIL_PORT=465
+MAIL_PORT=587
 MAIL_USERNAME=resend
 MAIL_PASSWORD=replace-with-resend-api-key
-MAIL_ENCRYPTION=ssl
+MAIL_ENCRYPTION=tls
 MAIL_FROM_ADDRESS=onboarding@resend.dev
 MAIL_FROM_NAME=Monitoring System Test
 MAIL_TIMEOUT=10
@@ -181,7 +181,7 @@ Confirm the Resend API key is active, the username is exactly `resend`, and the 
 
 ### Railway cannot connect to SMTP
 
-Use port `465` with `MAIL_ENCRYPTION=ssl`. If the provider supports it and port 465 is unavailable, use port `587` with `MAIL_ENCRYPTION=tls`. Do not use port 25.
+Use port `587` with `MAIL_ENCRYPTION=tls`. If port 587 is unavailable in the Railway region, use port `465` with `MAIL_ENCRYPTION=ssl` only after confirming that port is reachable. Do not use port 25.
 
 ### Assets look stale
 

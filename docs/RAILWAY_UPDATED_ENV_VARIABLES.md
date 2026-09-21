@@ -45,13 +45,13 @@ LOG_LEVEL=info
 LOG_STACK=single
 
 # Resend SMTP testing without a custom domain
-MAIL_ENCRYPTION=ssl
+MAIL_ENCRYPTION=tls
 MAIL_FROM_ADDRESS=onboarding@resend.dev
 MAIL_FROM_NAME="Monitoring System Test"
 MAIL_HOST=smtp.resend.com
 MAIL_MAILER=smtp
 MAIL_PASSWORD=REPLACE_ME_WITH_RESEND_API_KEY
-MAIL_PORT=465
+MAIL_PORT=587
 MAIL_TIMEOUT=10
 MAIL_USERNAME=resend
 
@@ -94,6 +94,8 @@ VITE_APP_NAME="${APP_NAME}"
 6. Save the variables and redeploy.
 7. Check the deployment logs for successful migrations and server startup.
 8. Run the application's SMTP test using the Resend account email as the recipient.
+
+Port `587` with STARTTLS is the recommended Railway setting. If the provider specifically requires implicit TLS and port 465 is reachable in your Railway region, `MAIL_PORT=465` and `MAIL_ENCRYPTION=ssl` may be used instead.
 
 The Railway start command should remain:
 

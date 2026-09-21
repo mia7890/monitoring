@@ -40,10 +40,10 @@ Add these variables to the Railway application service. Replace `re_xxxxxxxxx` w
 ```ini
 MAIL_MAILER=smtp
 MAIL_HOST=smtp.resend.com
-MAIL_PORT=465
+MAIL_PORT=587
 MAIL_USERNAME=resend
 MAIL_PASSWORD=re_xxxxxxxxx
-MAIL_ENCRYPTION=ssl
+MAIL_ENCRYPTION=tls
 MAIL_FROM_ADDRESS=onboarding@resend.dev
 MAIL_FROM_NAME="Monitoring System Test"
 MAIL_TIMEOUT=10
