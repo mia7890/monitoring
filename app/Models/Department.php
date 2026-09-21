@@ -17,6 +17,10 @@ class Department extends Model
         'is_active',
     ];
 
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
     public function faes(): HasMany
     {
         return $this->hasMany(FaeUser::class, 'department_id');
