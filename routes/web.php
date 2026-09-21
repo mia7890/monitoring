@@ -97,6 +97,7 @@ Route::middleware(['auth.monitoring'])->group(function () {
         Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
         Route::post('/settings/update-name', [SettingsController::class, 'updateName'])->name('settings.updateName');
         Route::post('/settings/update-key', [SettingsController::class, 'updateKey'])->name('settings.updateKey');
+        Route::post('/settings/update-email', [SettingsController::class, 'updateEmail'])->name('settings.updateEmail');
         Route::post('/settings/test-smtp', [SettingsController::class, 'testSmtp'])->name('settings.testSmtp');
     });
 });

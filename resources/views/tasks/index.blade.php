@@ -224,6 +224,8 @@
                                                 data-progress="{{ (int)$row->progress }}"
                                                 data-priority="{{ $row->priority ?? 'Medium' }}"
                                                 data-description="{{ $row->description ?? '' }}"
+                                                data-links="{{ $row->links ?? '' }}"
+                                                data-attachment-count="{{ count($row->attachments_list) }}"
                                                 title="Edit Task"
                                                 style="display:inline-flex; align-items:center; justify-content:center;">
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -284,8 +286,8 @@
 
 <!-- 1. TASK CREATION / EDIT UNIFIED MODAL -->
 <div class="custom-modal-overlay" id="addTaskModal">
-    <div class="custom-modal" style="max-width: 580px;">
-        <div class="custom-modal-header">
+    <div class="custom-modal" style="max-width: 580px; max-height: 90vh; display: flex; flex-direction: column;">
+        <div class="custom-modal-header" style="flex-shrink: 0;">
             <div>
                 <h3 id="taskModalHeaderTitle">Create New Task</h3>
                 <p id="taskModalHeaderSubtitle" style="font-size:11px; color:var(--text-light); margin:2px 0 0 0;">Fill in the task details and assign an engineer.</p>
@@ -293,11 +295,11 @@
             <button type="button" class="custom-modal-close" data-close="addTaskModal">&times;</button>
         </div>
 
-        <form method="POST" action="{{ route('tasks.store') }}" id="addTaskForm">
+        <form method="POST" action="{{ route('tasks.store') }}" id="addTaskForm" enctype="multipart/form-data" style="display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; margin: 0;">
             @csrf
             <input type="hidden" name="_method" id="taskFormMethod" value="POST">
 
-            <div class="custom-modal-body">
+            <div class="custom-modal-body" style="overflow-y: auto; flex: 1; min-height: 0; padding: 18px;">
                 <div class="form-group">
                     <label class="form-label">Assign To Contact(s) <span class="req">*</span></label>
                     <div style="position:relative;" id="faeMultiSelectWrap">
@@ -375,9 +377,28 @@
                     <label class="form-label">Description / Instructions</label>
                     <textarea name="description" id="addTaskDescription" class="form-control" rows="2" placeholder="Optional background details, deliverables scope or site contact..."></textarea>
                 </div>
+
+                <div class="form-group">
+                    <label class="form-label">Reference Links / Cloud URLs <span style="font-size:10.5px; color:var(--text-secondary); font-weight:400;">(Optional)</span></label>
+                    <textarea name="links" id="addTaskLinks" class="form-control" rows="2" placeholder="e.g. https://drive.google.com/folder..., https://docs.google.com/... (Separate multiple links by new lines or commas)"></textarea>
+                    <small style="font-size:10px; color:var(--text-secondary); margin-top:2px; display:block;">Add any documentation, external links, or drive folders for the assigned engineer.</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Reference Pictures / Attachments <span style="font-size:10.5px; color:var(--text-secondary); font-weight:400;">(Optional)</span></label>
+                    <input type="file" name="attachments[]" id="addTaskAttachments" class="form-control" multiple accept="image/*,.pdf,.doc,.docx,.zip">
+                    <small style="font-size:10.5px; color:var(--text-secondary); margin-top:2px; display:block;">Attach photos, schematics, or reference files. Multiple files supported.</small>
+                    <div id="addTaskFilesPreview" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;"></div>
+                    <div id="addTaskExistingFilesWrap" style="display:none; margin-top:8px; padding:8px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; font-size:11.5px;">
+                        <span style="color:#64748b; font-weight:600;">Current Attachments:</span> <span id="addTaskExistingFilesCount" style="font-weight:700; color:#0f172a;">0</span> file(s) attached.
+                        <label style="display:inline-flex; align-items:center; gap:5px; margin-left:14px; color:#dc2626; font-size:11px; cursor:pointer; font-weight:600;">
+                            <input type="checkbox" name="remove_existing_attachments" value="1" id="removeExistingAttachmentsCb" style="accent-color:#dc2626;"> Remove existing attachments
+                        </label>
+                    </div>
+                </div>
             </div>
 
-            <div class="custom-modal-footer">
+            <div class="custom-modal-footer" style="flex-shrink: 0; padding: 12px 18px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: flex-end; gap: 8px; background: #fafafa;">
                 <button type="button" class="secondary-button btn-sm" data-close="addTaskModal">Cancel</button>
                 <button type="button" class="primary-button btn-sm" id="btnReviewTaskSummary">
                     Review &amp; Summary →
@@ -389,8 +410,8 @@
 
 <!-- 1B. TASK CREATION / EDIT SUMMARY CONFIRMATION MODAL -->
 <div class="custom-modal-overlay" id="taskSummaryModal">
-    <div class="custom-modal" style="max-width: 480px;">
-        <div class="custom-modal-header">
+    <div class="custom-modal" style="max-width: 480px; max-height: 90vh; display: flex; flex-direction: column;">
+        <div class="custom-modal-header" style="flex-shrink: 0;">
             <div>
                 <h3 id="sumModalHeaderTitle">Confirm Task Details</h3>
                 <p id="sumModalHeaderSubtitle" style="font-size:11px; color:var(--text-light); margin:2px 0 0 0;">Please review the summary below before proceeding.</p>
@@ -398,7 +419,7 @@
             <button type="button" class="custom-modal-close" data-close="taskSummaryModal">&times;</button>
         </div>
 
-        <div class="custom-modal-body">
+        <div class="custom-modal-body" style="overflow-y: auto; flex: 1; min-height: 0; padding: 18px;">
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:12px;">
                 <div style="font-size:11px; text-transform:uppercase; font-weight:700; color:var(--primary); margin-bottom:8px; letter-spacing:0.5px;">Task Overview</div>
                 <h4 id="sumTaskName" style="margin:0 0 10px 0; font-size:15px; color:#0f172a;"></h4>
@@ -430,10 +451,20 @@
                     <span style="color:#64748b; font-size:11px; display:block;">Instructions / Description:</span>
                     <p id="sumDescription" style="margin:4px 0 0 0; font-size:11.5px; color:#334155; line-height:1.4;"></p>
                 </div>
+
+                <div id="sumLinksWrap" style="border-top:1px dashed #cbd5e1; padding-top:8px; margin-top:8px; display:none;">
+                    <span style="color:#64748b; font-size:11px; display:block;">Reference Links:</span>
+                    <div id="sumLinks" style="margin:4px 0 0 0; font-size:11.5px; color:var(--primary); word-break:break-all; line-height:1.4;"></div>
+                </div>
+
+                <div id="sumAttachmentsWrap" style="border-top:1px dashed #cbd5e1; padding-top:8px; margin-top:8px; display:none;">
+                    <span style="color:#64748b; font-size:11px; display:block;">Pictures &amp; Attachments:</span>
+                    <span id="sumAttachmentsCount" style="font-weight:600; font-size:11.5px; color:#0f172a;"></span>
+                </div>
             </div>
         </div>
 
-        <div class="custom-modal-footer">
+        <div class="custom-modal-footer" style="flex-shrink: 0; padding: 12px 18px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: flex-end; gap: 8px; background: #fafafa;">
             <button type="button" class="secondary-button btn-sm" id="btnBackToEditTask">← Back to Edit</button>
             <button type="button" class="primary-button btn-sm" id="btnConfirmSubmitTask">
                 ✓ Confirm &amp; Submit Task
@@ -521,6 +552,16 @@
                 <div id="reportModalDescWrap" style="margin-top:8px; padding-top:8px; border-top:1px solid #eee; display:none;">
                     <span style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.3px; display:block;">Task Instructions</span>
                     <p id="reportModalDescription" class="task-desc-text"></p>
+                </div>
+
+                <div id="reportModalLinksWrap" style="margin-top:8px; padding-top:8px; border-top:1px solid #eee; display:none;">
+                    <span style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.3px; display:block;">Reference Links</span>
+                    <div id="reportModalLinksList" style="margin-top:4px; display:flex; flex-direction:column; gap:4px;"></div>
+                </div>
+
+                <div id="reportModalAttachmentsWrap" style="margin-top:8px; padding-top:8px; border-top:1px solid #eee; display:none;">
+                    <span style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.3px; display:block;">Supervisor Reference Photos &amp; Attachments</span>
+                    <div id="reportModalAttachmentsList" style="margin-top:6px; display:flex; flex-wrap:wrap; gap:8px;"></div>
                 </div>
             </div>
 
@@ -662,6 +703,21 @@
         document.getElementById("addTaskDeadline").value = "{{ date('Y-m-d', strtotime('+7 days')) }}";
         document.getElementById("addTaskPriority").value = "Medium";
         document.getElementById("addTaskDescription").value = "";
+        
+        const linksEl = document.getElementById("addTaskLinks");
+        if (linksEl) linksEl.value = "";
+
+        const filesInput = document.getElementById("addTaskAttachments");
+        if (filesInput) filesInput.value = "";
+
+        const filesPreview = document.getElementById("addTaskFilesPreview");
+        if (filesPreview) filesPreview.innerHTML = "";
+
+        const existingWrap = document.getElementById("addTaskExistingFilesWrap");
+        if (existingWrap) existingWrap.style.display = "none";
+
+        const removeCb = document.getElementById("removeExistingAttachmentsCb");
+        if (removeCb) removeCb.checked = false;
 
         if (typeof faeCheckboxes !== 'undefined') {
             faeCheckboxes.forEach(cb => cb.checked = false);
@@ -742,6 +798,8 @@
             const courseInput = document.getElementById("addTaskCourse");
             const prioritySelect = document.getElementById("addTaskPriority");
             const descInput = document.getElementById("addTaskDescription");
+            const linksInput = document.getElementById("addTaskLinks");
+            const attachmentsInput = document.getElementById("addTaskAttachments");
 
             const taskName = taskNameInput ? taskNameInput.value.trim() : "";
             const deadline = deadlineInput ? deadlineInput.value : "";
@@ -802,6 +860,33 @@
                 descWrap.style.display = "none";
             }
 
+            // Links Summary
+            const linksVal = linksInput ? linksInput.value.trim() : "";
+            const linksWrap = document.getElementById("sumLinksWrap");
+            const sumLinksEl = document.getElementById("sumLinks");
+            if (linksVal) {
+                const linkItems = linksVal.split(/[\r\n,]+/).map(s => s.trim()).filter(Boolean);
+                sumLinksEl.innerHTML = linkItems.map(l => `<a href="${escapeHtml(l)}" target="_blank" style="display:block; color:var(--primary); text-decoration:underline; margin-bottom:2px;">🔗 ${escapeHtml(l)}</a>`).join('');
+                linksWrap.style.display = "block";
+            } else {
+                linksWrap.style.display = "none";
+            }
+
+            // Attachments Summary
+            const filesCount = attachmentsInput && attachmentsInput.files ? attachmentsInput.files.length : 0;
+            const existingCount = parseInt(document.getElementById("addTaskExistingFilesCount")?.textContent || "0");
+            const removeCbChecked = document.getElementById("removeExistingAttachmentsCb")?.checked;
+            const effectiveCount = (removeCbChecked ? 0 : existingCount) + filesCount;
+            const attWrap = document.getElementById("sumAttachmentsWrap");
+            const sumAttEl = document.getElementById("sumAttachmentsCount");
+
+            if (effectiveCount > 0) {
+                sumAttEl.textContent = `${effectiveCount} file(s) attached` + (filesCount > 0 ? ` (${filesCount} newly selected)` : '');
+                attWrap.style.display = "block";
+            } else {
+                attWrap.style.display = "none";
+            }
+
             closeModal("addTaskModal");
             openModal("taskSummaryModal");
         });
@@ -836,6 +921,8 @@
             const deadline = this.getAttribute("data-deadline");
             const priority = this.getAttribute("data-priority");
             const description = this.getAttribute("data-description");
+            const links = this.getAttribute("data-links") || "";
+            const attachmentCount = parseInt(this.getAttribute("data-attachment-count") || "0");
 
             const titleEl = document.getElementById("taskModalHeaderTitle");
             const subTitleEl = document.getElementById("taskModalHeaderSubtitle");
@@ -843,9 +930,9 @@
             const methodEl = document.getElementById("taskFormMethod");
 
             if (titleEl) titleEl.textContent = "Edit Task Details";
-            if (subTitleEl) subTitleEl.textContent = "Update task information, assigned FAE, deadline, or priority.";
+            if (subTitleEl) subTitleEl.textContent = "Update task information, assigned FAE, deadline, attachments, or priority.";
             if (formEl) formEl.action = "{{ url('tasks') }}/" + taskId;
-            if (methodEl) methodEl.value = "PUT";
+            if (methodEl) methodEl.value = "POST"; // Handled via POST with _method=PUT
 
             document.getElementById("addTaskName").value = taskName || "";
             document.getElementById("addTaskRegion").value = region || "";
@@ -853,6 +940,27 @@
             document.getElementById("addTaskDeadline").value = deadline || "";
             document.getElementById("addTaskPriority").value = priority || "Medium";
             document.getElementById("addTaskDescription").value = description || "";
+            
+            const linksInput = document.getElementById("addTaskLinks");
+            if (linksInput) linksInput.value = links;
+
+            const filesInput = document.getElementById("addTaskAttachments");
+            if (filesInput) filesInput.value = "";
+
+            const filesPreview = document.getElementById("addTaskFilesPreview");
+            if (filesPreview) filesPreview.innerHTML = "";
+
+            const existingWrap = document.getElementById("addTaskExistingFilesWrap");
+            const existingCountEl = document.getElementById("addTaskExistingFilesCount");
+            const removeCb = document.getElementById("removeExistingAttachmentsCb");
+
+            if (attachmentCount > 0) {
+                if (existingWrap) existingWrap.style.display = "block";
+                if (existingCountEl) existingCountEl.textContent = attachmentCount;
+                if (removeCb) removeCb.checked = false;
+            } else {
+                if (existingWrap) existingWrap.style.display = "none";
+            }
 
             // Pre-select assigned FAE in multi-select checkbox list
             faeCheckboxes.forEach(cb => {
@@ -863,6 +971,37 @@
             openModal("addTaskModal");
         });
     });
+
+    // Add Task Attachments Live Preview
+    const addTaskFilesInput = document.getElementById("addTaskAttachments");
+    const addTaskFilesPreview = document.getElementById("addTaskFilesPreview");
+
+    if (addTaskFilesInput && addTaskFilesPreview) {
+        addTaskFilesInput.addEventListener("change", function() {
+            addTaskFilesPreview.innerHTML = "";
+            const files = Array.from(this.files);
+
+            if (files.length === 0) return;
+
+            files.forEach(file => {
+                const itemDiv = document.createElement("div");
+                itemDiv.style.cssText = "position:relative; border:1px solid #cbd5e1; border-radius:6px; padding:4px; background:#ffffff; max-width:110px; font-size:10px; text-align:center;";
+
+                if (file.type.startsWith("image/")) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        itemDiv.innerHTML = '<img src="' + e.target.result + '" style="width:100%; height:55px; object-fit:cover; border-radius:4px; display:block; margin-bottom:3px;">' +
+                                            '<div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; color:#475569;">' + escapeHtml(file.name) + '</div>';
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    itemDiv.innerHTML = '<div style="height:55px; display:flex; align-items:center; justify-content:center; background:#f1f5f9; border-radius:4px; font-size:18px; margin-bottom:3px;">📄</div>' +
+                                        '<div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; color:#475569;">' + escapeHtml(file.name) + '</div>';
+                }
+                addTaskFilesPreview.appendChild(itemDiv);
+            });
+        });
+    }
 
     // Delete Task Trigger
     document.querySelectorAll(".btn-delete-task-trigger").forEach(function(btn) {
@@ -1137,6 +1276,44 @@
                     document.getElementById("reportModalDescWrap").style.display = "block";
                 } else {
                     document.getElementById("reportModalDescWrap").style.display = "none";
+                }
+
+                // Render Reference Links
+                const linksWrap = document.getElementById("reportModalLinksWrap");
+                const linksListEl = document.getElementById("reportModalLinksList");
+                const linksArray = t.links_list || [];
+                if (linksArray.length > 0) {
+                    linksListEl.innerHTML = linksArray.map(l => {
+                        return '<a href="' + escapeHtml(l) + '" target="_blank" style="display:inline-flex; align-items:center; gap:5px; color:var(--primary); font-size:11.5px; text-decoration:none; background:#f8fafc; border:1px solid #e2e8f0; padding:4px 8px; border-radius:4px; font-weight:500;" onmouseover="this.style.background=\'#eff6ff\'" onmouseout="this.style.background=\'#f8fafc\'">' +
+                                    '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>' +
+                                    '<span>' + escapeHtml(l) + '</span>' +
+                                '</a>';
+                    }).join('');
+                    linksWrap.style.display = "block";
+                } else {
+                    linksWrap.style.display = "none";
+                }
+
+                // Render Supervisor Attachments
+                const attWrap = document.getElementById("reportModalAttachmentsWrap");
+                const attListEl = document.getElementById("reportModalAttachmentsList");
+                const attArray = t.attachments || [];
+                if (attArray.length > 0) {
+                    attListEl.innerHTML = attArray.map(att => {
+                        if (att.is_image) {
+                            return '<a href="' + escapeHtml(att.url) + '" target="_blank" style="display:inline-block; border:1px solid #cbd5e1; border-radius:6px; overflow:hidden; background:#fff; text-decoration:none; box-shadow:0 1px 3px rgba(0,0,0,0.08);">' +
+                                        '<img src="' + escapeHtml(att.url) + '" alt="' + escapeHtml(att.filename) + '" style="height:80px; width:110px; object-fit:cover; display:block;">' +
+                                        '<div style="font-size:9.5px; color:#475569; padding:2px 4px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; max-width:110px; text-align:center;">' + escapeHtml(att.filename) + '</div>' +
+                                    '</a>';
+                        } else {
+                            return '<a href="' + escapeHtml(att.url) + '" target="_blank" class="outline-button btn-sm" style="display:inline-flex; align-items:center; gap:4px; text-decoration:none; padding:4px 8px; font-size:11px;">' +
+                                        '📄 ' + escapeHtml(att.filename) +
+                                    '</a>';
+                        }
+                    }).join('');
+                    attWrap.style.display = "block";
+                } else {
+                    attWrap.style.display = "none";
                 }
 
                 // Status & priority badges

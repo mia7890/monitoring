@@ -13,7 +13,7 @@ return new class extends Migration
     {
         if (Schema::hasTable('admin_events') && !Schema::hasColumn('admin_events', 'end_date')) {
             Schema::table('admin_events', function (Blueprint $table) {
-                $table->date('end_date')->nullable()->after('event_date')->index();
+                $table->date('end_date')->nullable()->index();
             });
         }
     }

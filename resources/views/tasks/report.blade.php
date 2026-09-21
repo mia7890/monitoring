@@ -468,6 +468,45 @@
             <div class="description-box">{{ $task->description }}</div>
         @endif
 
+        <!-- REFERENCE LINKS -->
+        @if(!empty($task->links_list) && count($task->links_list) > 0)
+            <div class="section-title" style="margin-top: 18px;">Reference Links &amp; URLs</div>
+            <div style="background: #ffffff; border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 6px;">
+                @foreach($task->links_list as $link)
+                    <a href="{{ $link }}" target="_blank" style="color: var(--primary); text-decoration: none; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; word-break: break-all;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                        <span>{{ $link }}</span>
+                    </a>
+                @endforeach
+            </div>
+        @endif
+
+        <!-- SUPERVISOR REFERENCE ATTACHMENTS & PHOTOS -->
+        @if(!empty($task->attachments_list) && count($task->attachments_list) > 0)
+            <div class="section-title" style="margin-top: 18px;">Supervisor Reference Attachments &amp; Photos</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px;">
+                @foreach($task->attachments_list as $attPath)
+                    @php
+                        $ext = strtolower(pathinfo($attPath, PATHINFO_EXTENSION));
+                        $isImg = in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'], true);
+                        $fileUrl = route('files.show', ['path' => $attPath]);
+                    @endphp
+                    @if($isImg)
+                        <a href="{{ $fileUrl }}" target="_blank" style="display: inline-block; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #ffffff; text-decoration: none; box-shadow: 0 1px 4px rgba(0,0,0,0.05);">
+                            <img src="{{ $fileUrl }}" alt="Task Reference Photo" style="height: 100px; width: 140px; object-fit: cover; display: block;">
+                            <div style="font-size: 10px; color: var(--text-muted); padding: 4px 6px; text-align: center; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                {{ basename($attPath) }}
+                            </div>
+                        </a>
+                    @else
+                        <a href="{{ $fileUrl }}" target="_blank" class="btn-action btn-back" style="font-size: 11px; padding: 6px 12px; border-radius: 6px;">
+                            📄 {{ basename($attPath) }}
+                        </a>
+                    @endif
+                @endforeach
+            </div>
+        @endif
+
         <!-- WORK REPORTS & ACTIVITY TIMELINE -->
         <div class="section-title">Work Reports &amp; Field Execution Log ({{ $task->updates->count() }} Entries)</div>
         

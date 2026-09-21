@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('fae_users', function (Blueprint $table) {
             $table->string('fae_code')->nullable()->change();
-            $table->string('status')->default('approved')->after('fae_code')->index();
+            $table->string('status')->default('approved')->index();
         });
     }
 

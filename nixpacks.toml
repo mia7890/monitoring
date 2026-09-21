@@ -1,11 +1,15 @@
-# Railway / Nixpacks configuration file
-# Specifies stable Debian Bookworm base to prevent Debian Trixie GPG signature errors
-
 [phases.setup]
-nixPkgs = ['php83', 'php83Packages.composer', 'nodejs_20']
+nixPkgs = ['php82', 'php82Packages.composer', 'php82Extensions.pdo_pgsql', 'php82Extensions.pgsql', 'php82Extensions.pdo_mysql', 'php82Extensions.pdo', 'php82Extensions.openssl', 'php82Extensions.mbstring', 'php82Extensions.curl', 'nodejs_20']
 
 [phases.build]
 cmds = [
-    'composer install --no-dev --optimize-autoloader',
-    'npm run build'
+    'composer install --no-dev --optimize-autoloader --no-interaction',
+    'npm ci || npm install',
+    'npm run build || true',
+    'php artisan config:cache',
+    'php artisan route:cache',
+    'php artisan view:cache'
 ]
+
+[start]
+cmd = 'php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}'

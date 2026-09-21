@@ -26,7 +26,7 @@ return new class extends Migration
     {
         if (Schema::hasTable('fae_users') && !Schema::hasColumn('fae_users', 'department')) {
             Schema::table('fae_users', function (Blueprint $table) {
-                $table->string('department')->nullable()->after('email');
+                $table->string('department')->nullable();
             });
         }
     }

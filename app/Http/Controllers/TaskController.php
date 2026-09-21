@@ -118,12 +118,36 @@ class TaskController extends Controller
                 },
             ],
             'priority' => 'nullable|in:Low,Medium,High,Urgent',
+            'links' => 'nullable|string|max:2000',
+            'attachments' => 'nullable|array',
+            'attachments.*' => 'nullable|file|max:10240',
         ], [
             'fae_id.required' => 'Please assign at least one FAE person to this task.',
             'fae_id.min' => 'Please select at least one FAE person.',
             'fae_id.*.exists' => 'One or more selected FAE members are invalid.',
         ]);
 
+        $storedPaths = [];
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                if ($file && $file->isValid()) {
+                    $ext = strtolower($file->getClientOriginalExtension());
+                    if (!in_array($ext, UploadService::ATTACHMENT_EXTENSIONS, true)) {
+                        return back()->with('error', "Invalid file type '.{$ext}'. Supported: JPG, PNG, GIF, WEBP, BMP, PDF, DOC, DOCX, TXT, ZIP.");
+                    }
+                    $storedPaths[] = UploadService::storeFile($file, 'task_req_');
+                }
+            }
+        }
+
+        $finalAttachment = null;
+        if (count($storedPaths) === 1) {
+            $finalAttachment = $storedPaths[0];
+        } elseif (count($storedPaths) > 1) {
+            $finalAttachment = json_encode(array_values($storedPaths));
+        }
+
+        $links = trim((string)$request->input('links'));
         $faeIds = (array) $request->input('fae_id');
         $taskName = trim($request->input('task_name'));
         $createdCount = 0;
@@ -135,6 +159,8 @@ class TaskController extends Controller
                 'course' => $request->input('course') ?: null,
                 'task_name' => $taskName,
                 'description' => $request->input('description') ?: null,
+                'attachment' => $finalAttachment,
+                'links' => $links ?: null,
                 'deadline' => $request->input('deadline') ?: null,
                 'status' => 'Pending',
                 'progress' => 0,
@@ -176,11 +202,45 @@ class TaskController extends Controller
                 },
             ],
             'priority' => 'nullable|in:Low,Medium,High,Urgent',
+            'links' => 'nullable|string|max:2000',
+            'attachments' => 'nullable|array',
+            'attachments.*' => 'nullable|file|max:10240',
         ], [
             'fae_id.required' => 'Please assign an FAE person to this task.',
             'fae_id.exists' => 'The selected FAE member does not exist.',
         ]);
 
+        $storedPaths = $task->attachments_list;
+
+        // Check if user requested removing existing attachments
+        if ($request->boolean('remove_existing_attachments')) {
+            foreach ($storedPaths as $p) {
+                UploadService::delete($p);
+            }
+            $storedPaths = [];
+        }
+
+        // Add newly uploaded attachments
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                if ($file && $file->isValid()) {
+                    $ext = strtolower($file->getClientOriginalExtension());
+                    if (!in_array($ext, UploadService::ATTACHMENT_EXTENSIONS, true)) {
+                        return back()->with('error', "Invalid file type '.{$ext}'. Supported: JPG, PNG, GIF, WEBP, BMP, PDF, DOC, DOCX, TXT, ZIP.");
+                    }
+                    $storedPaths[] = UploadService::storeFile($file, 'task_req_');
+                }
+            }
+        }
+
+        $finalAttachment = null;
+        if (count($storedPaths) === 1) {
+            $finalAttachment = $storedPaths[0];
+        } elseif (count($storedPaths) > 1) {
+            $finalAttachment = json_encode(array_values($storedPaths));
+        }
+
+        $links = trim((string)$request->input('links'));
         $oldFaeId = $task->fae_id;
         $newFaeId = (int)$request->input('fae_id');
 
@@ -190,6 +250,8 @@ class TaskController extends Controller
             'course' => $request->input('course') ?: null,
             'task_name' => trim($request->input('task_name')),
             'description' => $request->input('description') ?: null,
+            'attachment' => $finalAttachment,
+            'links' => $links ?: null,
             'deadline' => $request->input('deadline') ?: null,
             'priority' => $request->input('priority', 'Medium'),
         ]);
@@ -234,6 +296,11 @@ class TaskController extends Controller
     public function destroy(Task $task)
     {
         $taskName = $task->task_name;
+
+        // Delete task's own attachments
+        foreach ($task->attachments_list as $attachmentPath) {
+            UploadService::delete($attachmentPath);
+        }
 
         $updates = TaskUpdate::where('task_id', $task->id)->get();
 
@@ -422,6 +489,16 @@ class TaskController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        $attachmentsData = [];
+        foreach ($task->attachments_list as $path) {
+            $attachmentsData[] = [
+                'path' => $path,
+                'url' => UploadService::url($path),
+                'filename' => basename($path),
+                'is_image' => in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'], true),
+            ];
+        }
+
         return response()->json([
             'success' => true,
             'task' => [
@@ -430,6 +507,9 @@ class TaskController extends Controller
                 'region' => $task->region,
                 'course' => $task->course,
                 'description' => $task->description,
+                'raw_links' => $task->links,
+                'links_list' => $task->links_list,
+                'attachments' => $attachmentsData,
                 'deadline' => $task->deadline ? $task->deadline->format('Y-m-d') : null,
                 'status' => $task->status,
                 'progress' => $task->progress,

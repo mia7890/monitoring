@@ -22,7 +22,7 @@ return new class extends Migration
 
         if (Schema::hasTable('fae_users') && !Schema::hasColumn('fae_users', 'department_id')) {
             Schema::table('fae_users', function (Blueprint $table) {
-                $table->unsignedInteger('department_id')->nullable()->after('email');
+                $table->unsignedInteger('department_id')->nullable();
                 $table->foreign('department_id')->references('id')->on('departments')->nullOnDelete()->cascadeOnUpdate();
             });
         }

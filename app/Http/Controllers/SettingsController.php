@@ -56,6 +56,40 @@ class SettingsController extends Controller
         return back()->with('success', 'Admin access key updated successfully!');
     }
 
+    public function updateEmail(Request $request)
+    {
+        $request->validate([
+            'admin_email' => 'required|string|max:500',
+        ]);
+
+        $raw = trim((string)$request->input('admin_email'));
+
+        // Validate each email in the comma-separated list
+        $parts = preg_split('/[\s,;]+/', $raw);
+        $validEmails = [];
+        foreach ($parts as $part) {
+            $cleaned = trim($part);
+            if ($cleaned === '') continue;
+            if (!filter_var($cleaned, FILTER_VALIDATE_EMAIL)) {
+                return back()->with('error', "Invalid email address: {$cleaned}");
+            }
+            $validEmails[] = $cleaned;
+        }
+
+        if (empty($validEmails)) {
+            return back()->with('error', 'Please enter at least one valid email address.');
+        }
+
+        Setting::set('admin_email', implode(', ', $validEmails));
+
+        $count = count($validEmails);
+        $msg = $count === 1
+            ? "Admin notification email updated successfully!"
+            : "Admin notification emails updated successfully! ({$count} emails)";
+
+        return back()->with('success', $msg);
+    }
+
     public function testSmtp(Request $request)
     {
         $request->validate([

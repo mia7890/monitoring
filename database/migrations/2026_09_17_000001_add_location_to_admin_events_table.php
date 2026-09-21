@@ -10,7 +10,7 @@ return new class extends Migration
     {
         if (Schema::hasTable('admin_events') && !Schema::hasColumn('admin_events', 'location')) {
             Schema::table('admin_events', function (Blueprint $table) {
-                $table->string('location', 255)->nullable()->after('description');
+                $table->string('location', 255)->nullable();
             });
         }
     }

@@ -38,6 +38,30 @@
             </form>
         </div>
 
+        <!-- Panel 0b: Admin Notification Email(s) -->
+        <div class="panel">
+            <div class="panel-header">
+                <div>
+                    <h2>Admin Notification Email(s)</h2>
+                    <p>Email addresses that receive system notifications (access key recovery, alerts, etc.).</p>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ route('settings.updateEmail') }}" style="display:flex; flex-direction:column; gap:16px;">
+                @csrf
+
+                <div class="form-group">
+                    <label class="form-label" for="admin_email">Email Address(es) <span class="req">*</span></label>
+                    <input class="form-control" id="admin_email" name="admin_email" type="text" required value="{{ old('admin_email', $adminEmail ?? '') }}" placeholder="e.g. email1@gmail.com, email2@gmail.com">
+                    <small style="font-size:10.5px; color:#64748b; margin-top:3px; display:block;">Separate multiple emails with commas. All listed emails will receive admin notifications.</small>
+                </div>
+
+                <div style="margin-top:8px;">
+                    <button class="primary-button btn-sm" type="submit">Save Email(s)</button>
+                </div>
+            </form>
+        </div>
+
         <!-- Panel 1: Change Admin Key -->
         <div class="panel">
             <div class="panel-header">

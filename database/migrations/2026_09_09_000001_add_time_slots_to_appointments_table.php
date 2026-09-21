@@ -14,10 +14,10 @@ return new class extends Migration
         if (Schema::hasTable('appointments')) {
             Schema::table('appointments', function (Blueprint $table) {
                 if (!Schema::hasColumn('appointments', 'start_time')) {
-                    $table->time('start_time')->nullable()->after('appointment_date');
+                    $table->time('start_time')->nullable();
                 }
                 if (!Schema::hasColumn('appointments', 'end_time')) {
-                    $table->time('end_time')->nullable()->after('start_time');
+                    $table->time('end_time')->nullable();
                 }
                 $table->index(['appointment_date', 'start_time', 'end_time'], 'appointments_date_time_index');
             });

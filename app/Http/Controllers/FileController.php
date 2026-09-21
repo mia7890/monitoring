@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Task;
 use App\Models\TaskUpdate;
 use App\Services\MonitoringAuth;
 use App\Services\UploadService;
@@ -27,7 +28,7 @@ class FileController extends Controller
      * Enforce access control:
      *  - Administrators may access every stored file.
      *  - Profile / avatar images are shared within the workspace.
-     *  - Task report attachments are restricted to the FAE assigned to the
+     *  - Task attachments and report attachments are restricted to the FAE assigned to the
      *    owning task (or an administrator).
      */
     private function userCanAccess(string $path): bool
@@ -46,7 +47,26 @@ class FileController extends Controller
             return true;
         }
 
-        $update = TaskUpdate::query()->where('attachment', $path)->first();
+        // Check if file is attached directly to a Task assigned to the current FAE
+        $task = Task::query()
+            ->where('fae_id', $currentFaeId)
+            ->where(function ($q) use ($path) {
+                $q->where('attachment', $path)
+                  ->orWhere('attachment', 'LIKE', '%' . $path . '%');
+            })
+            ->first();
+
+        if ($task) {
+            return true;
+        }
+
+        // Check if file is attached to a TaskUpdate on a task assigned to current FAE
+        $update = TaskUpdate::query()
+            ->where(function ($q) use ($path) {
+                $q->where('attachment', $path)
+                  ->orWhere('attachment', 'LIKE', '%' . $path . '%');
+            })
+            ->first();
 
         if (!$update || !$update->task) {
             return false;

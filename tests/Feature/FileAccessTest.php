@@ -122,6 +122,50 @@ class FileAccessTest extends TestCase
         $this->assertEquals('AVATAR-BYTES', file_get_contents($response->baseResponse->getFile()->getPathname()));
     }
 
+    public function test_direct_task_attachment_is_visible_to_assigned_fae(): void
+    {
+        Storage::fake('local');
+
+        $owner = FaeUser::create(['name' => 'Assigned Fae', 'fae_code' => 'FILE-7']);
+        $path = 'uploads/task_req_test.jpg';
+        Storage::disk('local')->put($path, 'TASK-IMAGE-BYTES');
+
+        $task = Task::create([
+            'fae_id' => $owner->id,
+            'task_name' => 'Assigned Task With File',
+            'attachment' => $path,
+            'status' => 'Pending',
+            'progress' => 0,
+        ]);
+
+        $response = $this->withSession(['monitoring_role' => 'fae', 'monitoring_fae_id' => $owner->id, 'monitoring_fae_name' => $owner->name])
+            ->get('/files/' . $path);
+        $response->assertOk();
+        $this->assertEquals('TASK-IMAGE-BYTES', file_get_contents($response->baseResponse->getFile()->getPathname()));
+    }
+
+    public function test_direct_task_attachment_is_hidden_from_unrelated_fae(): void
+    {
+        Storage::fake('local');
+
+        $owner = FaeUser::create(['name' => 'Assigned Fae', 'fae_code' => 'FILE-8']);
+        $other = FaeUser::create(['name' => 'Other Fae', 'fae_code' => 'FILE-9']);
+        $path = 'uploads/task_req_secret.jpg';
+        Storage::disk('local')->put($path, 'SECRET-TASK-IMAGE');
+
+        $task = Task::create([
+            'fae_id' => $owner->id,
+            'task_name' => 'Assigned Task With Secret File',
+            'attachment' => $path,
+            'status' => 'Pending',
+            'progress' => 0,
+        ]);
+
+        $this->withSession(['monitoring_role' => 'fae', 'monitoring_fae_id' => $other->id, 'monitoring_fae_name' => $other->name])
+            ->get('/files/' . $path)
+            ->assertNotFound();
+    }
+
     public function test_path_traversal_is_rejected(): void
     {
         Storage::fake('local');
