@@ -169,6 +169,8 @@ Never print `MAIL_PASSWORD`, `DB_PASSWORD`, or `APP_KEY` in logs or command outp
 
 Verify the MySQL service is running and the four Railway MySQL variable references resolve correctly. Do not use `mysql.railway.internal` from a local machine.
 
+The Railway start command must not ignore migration failures. If `php artisan migrate --force` fails, let the deployment fail and fix the migration or Railway database variables before serving traffic.
+
 ### URLs redirect to an unreachable HTTPS address
 
 Confirm `APP_URL` is the Railway HTTPS domain and redeploy after changing it. The application only forces HTTPS when production uses an HTTPS `APP_URL`.
