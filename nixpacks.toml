@@ -1,15 +1,12 @@
 [phases.setup]
-nixPkgs = ['php82', 'php82Packages.composer', 'php82Extensions.pdo_pgsql', 'php82Extensions.pgsql', 'php82Extensions.pdo_mysql', 'php82Extensions.pdo', 'php82Extensions.openssl', 'php82Extensions.mbstring', 'php82Extensions.curl', 'nodejs_20']
+nixPkgs = ['php82', 'php82Packages.composer', 'php82Extensions.pdo_pgsql', 'php82Extensions.pgsql', 'php82Extensions.pdo_mysql', 'php82Extensions.pdo', 'php82Extensions.openssl', 'php82Extensions.mbstring', 'php82Extensions.curl']
 
 [phases.build]
 cmds = [
     'composer install --no-dev --optimize-autoloader --no-interaction',
-    'npm ci || npm install',
-    'npm run build || true',
-    'php artisan config:cache',
-    'php artisan route:cache',
-    'php artisan view:cache'
+    'php artisan view:clear',
+    'php artisan route:clear'
 ]
 
 [start]
-cmd = 'php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}'
+cmd = 'php artisan config:clear && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=${PORT:-8000}'
