@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Mail\Transport\BrevoTransport;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -28,6 +30,12 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('monitoring-login', function ($request) {
             return Limit::perMinute(10)->by($request->ip());
+        });
+
+        // Register the Brevo HTTP API mail transport
+        Mail::extend('brevo', function (array $config = []) {
+            $apiKey = $config['api_key'] ?? config('services.brevo.api_key', '');
+            return new BrevoTransport($apiKey);
         });
     }
 }
