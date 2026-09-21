@@ -404,6 +404,16 @@
                     <span style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.3px; display:block;">Task Instructions</span>
                     <p id="reportModalDescription" class="task-desc-text"></p>
                 </div>
+
+                <div id="reportModalLinksWrap" style="margin-top:8px; padding-top:8px; border-top:1px solid #eee; display:none;">
+                    <span style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.3px; display:block;">Reference Links</span>
+                    <div id="reportModalLinksList" style="margin-top:4px; display:flex; flex-direction:column; gap:4px;"></div>
+                </div>
+
+                <div id="reportModalAttachmentsWrap" style="margin-top:8px; padding-top:8px; border-top:1px solid #eee; display:none;">
+                    <span style="font-size:10px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.3px; display:block;">Supervisor Reference Photos &amp; Attachments</span>
+                    <div id="reportModalAttachmentsList" style="margin-top:6px; display:flex; flex-wrap:wrap; gap:8px;"></div>
+                </div>
             </div>
 
             <!-- CHRONOLOGICAL ACTIVITY LOG / REPORTS TIMELINE -->
@@ -917,6 +927,48 @@
                     document.getElementById("reportModalDescWrap").style.display = "block";
                 } else {
                     document.getElementById("reportModalDescWrap").style.display = "none";
+                }
+
+                // Render Reference Links
+                const linksWrap = document.getElementById("reportModalLinksWrap");
+                const linksListEl = document.getElementById("reportModalLinksList");
+                const linksArray = t.links_list || [];
+                if (linksWrap && linksListEl) {
+                    if (linksArray.length > 0) {
+                        linksListEl.innerHTML = linksArray.map(l => {
+                            return '<a href="' + escapeHtml(l) + '" target="_blank" style="display:inline-flex; align-items:center; gap:5px; color:var(--primary); font-size:11.5px; text-decoration:none; background:#f8fafc; border:1px solid #e2e8f0; padding:4px 8px; border-radius:4px; font-weight:500;" onmouseover="this.style.background=\'#eff6ff\'" onmouseout="this.style.background=\'#f8fafc\'">' +
+                                        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>' +
+                                        '<span>' + escapeHtml(l) + '</span>' +
+                                    '</a>';
+                        }).join('');
+                        linksWrap.style.display = "block";
+                    } else {
+                        linksWrap.style.display = "none";
+                    }
+                }
+
+                // Render Supervisor Attachments
+                const attWrap = document.getElementById("reportModalAttachmentsWrap");
+                const attListEl = document.getElementById("reportModalAttachmentsList");
+                const attArray = t.attachments || [];
+                if (attWrap && attListEl) {
+                    if (attArray.length > 0) {
+                        attListEl.innerHTML = attArray.map(att => {
+                            if (att.is_image) {
+                                return '<a href="' + escapeHtml(att.url) + '" target="_blank" style="display:inline-block; border:1px solid #cbd5e1; border-radius:6px; overflow:hidden; background:#fff; text-decoration:none; box-shadow:0 1px 3px rgba(0,0,0,0.08);">' +
+                                            '<img src="' + escapeHtml(att.url) + '" alt="' + escapeHtml(att.filename) + '" style="height:80px; width:110px; object-fit:cover; display:block;">' +
+                                            '<div style="font-size:9.5px; color:#475569; padding:2px 4px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; max-width:110px; text-align:center;">' + escapeHtml(att.filename) + '</div>' +
+                                        '</a>';
+                            } else {
+                                return '<a href="' + escapeHtml(att.url) + '" target="_blank" class="outline-button btn-sm" style="display:inline-flex; align-items:center; gap:4px; text-decoration:none; padding:4px 8px; font-size:11px;">' +
+                                            '📄 ' + escapeHtml(att.filename) +
+                                        '</a>';
+                            }
+                        }).join('');
+                        attWrap.style.display = "block";
+                    } else {
+                        attWrap.style.display = "none";
+                    }
                 }
 
                 // Status & priority badges
