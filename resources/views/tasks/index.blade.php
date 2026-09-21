@@ -1400,7 +1400,7 @@
                                 attList.forEach(attPath => {
                                     const ext = attPath.split('.').pop().toLowerCase();
                                     const isImg = ['jpg','jpeg','png','gif','webp','bmp'].includes(ext);
-                                    const assetUrl = '{{ url('files') }}/' + encodeURIComponent(attPath);
+                                    const assetUrl = '{{ url('files') }}/' + attPath.split('/').map(s => encodeURIComponent(s)).join('/');
 
                                     if (isImg) {
                                         html += '<a href="' + assetUrl + '" target="_blank" style="display:inline-block; border:1px solid #cbd5e1; border-radius:6px; overflow:hidden; background:#fff; text-decoration:none;">' +
