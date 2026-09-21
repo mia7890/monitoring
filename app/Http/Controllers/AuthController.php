@@ -48,46 +48,24 @@ class AuthController extends Controller
         // Check if email already registered
         $existing = FaeUser::where('email', $email)->first();
         if ($existing) {
-            if ($existing->isApproved()) {
-                return back()->withInput()->with('error', 'This email address is already registered. Your Access Code is: ' . $existing->fae_code . '. Please log in with this code.');
-            }
             if ($existing->isPending()) {
-                $accessCode = $existing->fae_code ?: $this->generateUniqueCode();
-                $existing->update([
-                    'status' => 'approved',
-                    'fae_code' => $accessCode,
-                ]);
-                try {
-                    Mail::to($email)->send(new ContactApprovedMail($existing->name, $accessCode));
-                } catch (\Throwable $e) {
-                    Log::error('Registration email delivery error: ' . $e->getMessage());
-                }
-                return redirect()->route('access')->with('success', "Registration approved! Your Access Code is: {$accessCode}. A copy has been sent to {$email}.");
+                return back()->withInput()->with('error', 'A registration with this email address is already pending administrator approval.');
+            }
+            if ($existing->isApproved()) {
+                return back()->withInput()->with('error', 'This email address is already registered and active. Please log in with your Access Code.');
             }
         }
-
-        $accessCode = $this->generateUniqueCode();
 
         FaeUser::create([
             'name' => $name,
             'email' => $email,
             'phone' => trim((string)$request->input('phone', '')),
             'department_id' => $request->input('department_id') ? (int)$request->input('department_id') : null,
-            'status' => 'approved',
-            'fae_code' => $accessCode,
+            'status' => 'pending',
+            'fae_code' => null, // Code generated upon admin approval
         ]);
 
-        $emailSent = false;
-        try {
-            Mail::to($email)->send(new ContactApprovedMail($name, $accessCode));
-            $emailSent = true;
-        } catch (\Throwable $e) {
-            Log::error('Registration instant email error: ' . $e->getMessage());
-        }
-
-        $msg = "Registration successful! Your Access Code is: {$accessCode}. " . ($emailSent ? "An email has also been sent to {$email}." : "Please save this Access Code to log in.");
-
-        return redirect()->route('access')->with('success', $msg);
+        return redirect()->route('access')->with('success', 'Registration submitted successfully! Your account is currently pending administrator approval. Once approved, your Access Code will be sent to ' . $email . '.');
     }
 
     public function login(Request $request)
