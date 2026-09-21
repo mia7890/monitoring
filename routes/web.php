@@ -26,7 +26,7 @@ Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/forgot-admin-key', function () {
     return redirect()->route('access');
 });
-Route::post('/forgot-admin-key', [AuthController::class, 'forgotKey'])->name('forgot.admin.key')->middleware('throttle:3,5');
+Route::post('/forgot-admin-key', [AuthController::class, 'forgotKey'])->name('forgot.admin.key')->middleware('throttle:20,1');
 Route::get('/fae-link/{code}', [AuthController::class, 'directFaeLink'])->name('fae.link')->middleware('throttle:monitoring-login');
 Route::get('/fae.php', function (\Illuminate\Http\Request $request) {
     if ($request->has('code')) {
