@@ -3,6 +3,7 @@
     $today = date('Y-m-d');
     $firstDayRaw = (int)date('w', mktime(0, 0, 0, $month, 1, $year));
     $daysInMonth = (int)date('t', mktime(0, 0, 0, $month, 1, $year));
+    $calendarRows = (int)ceil(($firstDayRaw + $daysInMonth) / 7);
 
     // Build JSON-safe arrays for client-side modal click handler
     $tasksByDayJson = [];
@@ -63,9 +64,9 @@
         html, body {
             margin: 0;
             padding: 0;
-            height: 100%;
+            min-height: 100%;
             width: 100%;
-            overflow: hidden;
+            overflow-x: hidden;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f8fafc;
             color: var(--text, #1e293b);
@@ -73,14 +74,14 @@
         }
 
         .landing-shell {
-            height: 100vh;
+            min-height: 100vh;
+            min-height: 100dvh;
             width: 100vw;
-            max-height: 100vh;
             max-width: 100vw;
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
-            overflow: hidden;
+            overflow-x: hidden;
             background: #f8fafc;
         }
 
@@ -112,7 +113,7 @@
         .landing-logo img {
             width: 38px;
             height: 38px;
-            border-radius: 50%;
+            border-radius: 6px;
             background: #ffffff;
             padding: 3px;
             border: 1px solid #e2e8f0;
@@ -147,7 +148,7 @@
         .landing-main {
             flex: 1 1 auto;
             min-height: 0;
-            height: calc(100vh - 54px - 32px);
+            min-height: calc(100dvh - 86px);
             width: 100%;
             max-width: 1920px;
             margin: 0 auto;
@@ -160,12 +161,10 @@
 
         .landing-shell .cal-layout {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 280px;
+            grid-template-columns: minmax(0, 1fr) minmax(240px, 280px);
             gap: 14px;
             flex: 1 1 auto;
             min-height: 0;
-            height: 100%;
-            max-height: 100%;
             margin-bottom: 0;
         }
 
@@ -239,10 +238,9 @@
         .landing-shell .cal-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            grid-auto-rows: 1fr;
+            grid-template-rows: repeat(var(--calendar-rows), minmax(0, 1fr));
             flex: 1 1 auto;
             min-height: 0;
-            height: 100%;
             border-left: 1px solid #f1f5f9;
         }
 
@@ -423,24 +421,22 @@
         @media (max-width: 860px), (max-height: 500px) {
             html, body {
                 overflow-y: auto;
-                height: auto;
+                min-height: 100%;
             }
             .landing-shell {
-                height: auto;
                 min-height: 100vh;
-                overflow: visible;
+                min-height: 100dvh;
             }
             .landing-main {
-                height: auto;
+                min-height: 0;
                 flex: none;
                 padding: 10px 14px;
             }
             .landing-shell .cal-layout {
                 grid-template-columns: 1fr;
-                height: auto;
             }
             .landing-shell .cal-grid {
-                height: auto;
+                grid-template-rows: repeat(var(--calendar-rows), minmax(68px, auto));
             }
             .landing-shell .cal-cell {
                 min-height: 68px;
@@ -460,7 +456,7 @@
     <!-- ================= TOPBAR ================= -->
     <header class="landing-topbar">
         <a href="{{ route('landing') }}" class="landing-logo">
-            <img src="{{ asset('logo.png') }}" alt="Hytec Power Logo">
+            <img src="{{ asset_versioned('logo.jpg') }}" alt="Hytec Power Logo">
             <div class="landing-logo-text">
                 <h1>Hytec Power Inc.</h1>
                 <span>Schedule &amp; Monitoring Portal</span>
@@ -522,7 +518,7 @@
                     </div>
 
                     <!-- Calendar Day Grid -->
-                    <div class="cal-grid">
+                    <div class="cal-grid" style="--calendar-rows: {{ $calendarRows }};">
                         @for ($i = 0; $i < $firstDayRaw; $i++)
                             <div class="cal-cell cal-cell--empty"></div>
                         @endfor

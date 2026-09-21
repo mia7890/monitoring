@@ -383,7 +383,7 @@
         <!-- HEADER -->
         <div class="doc-header">
             <div class="company-brand">
-                <img src="{{ asset('logo.png') }}" alt="Hytec Power Inc." class="company-logo" onerror="this.style.display='none'">
+                <img src="{{ asset_versioned('logo.jpg') }}" alt="Hytec Power Inc." class="company-logo" onerror="this.style.display='none'">
                 <div class="company-info">
                     <h1>HYTEC POWER INC.</h1>
                     <span>Field Application Engineering Monitoring System</span>

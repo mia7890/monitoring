@@ -38,7 +38,7 @@
         <div class="logo" style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
             <div style="display:flex; align-items:center; gap:10px;">
                 <div class="logo-icon">
-                    <img src="{{ asset('logo.png') }}" alt="Monitoring System logo">
+                    <img src="{{ asset_versioned('logo.jpg') }}" alt="Monitoring System logo">
                 </div>
                 <div class="logo-text">
                     <h2>Hytec Power inc.</h2>

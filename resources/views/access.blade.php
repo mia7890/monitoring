@@ -189,7 +189,7 @@
         </div>
 
         <div class="access-mark">
-            <img src="{{ asset('logo.png') }}" alt="Monitoring System logo">
+            <img src="{{ asset_versioned('logo.jpg') }}" alt="Monitoring System logo">
         </div>
         <p class="welcome-label">MONITORING SYSTEM</p>
         <h1>Choose your workspace</h1>

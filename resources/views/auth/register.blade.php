@@ -228,7 +228,7 @@
 <body class="register-page">
     <div class="register-shell">
         <div class="logo-mark">
-            <img src="{{ asset('logo.png') }}" alt="Hytec Power Inc.">
+            <img src="{{ asset_versioned('logo.jpg') }}" alt="Hytec Power Inc.">
         </div>
         <p class="welcome-label">HYTEC POWER INC.</p>
         <h1>Create Account</h1>
