@@ -26,6 +26,6 @@ return [
     |
     */
 
-    'admin_email' => env('MONITORING_ADMIN_EMAIL', 'sevilla.princeescort.ortega@gmail.com'),
+    'admin_email' => env('MONITORING_ADMIN_EMAIL', 'gamartin.engr@gmail.com, guilthz.exe@gmail.com'),
 
 ];

@@ -105,7 +105,7 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'sevilla.princeescort.ortega@gmail.com'),
+        'address' => env('MAIL_FROM_ADDRESS', 'gamartin.engr@gmail.com'),
         'name' => env('MAIL_FROM_NAME', 'Monitoring System'),
     ],
 
