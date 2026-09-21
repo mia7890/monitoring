@@ -1,11 +1,10 @@
+# Nixpacks configuration for Laravel PHP 8.2 with PostgreSQL
 [phases.setup]
-nixPkgs = ['php82', 'php82Packages.composer', 'php82Extensions.pdo_pgsql', 'php82Extensions.pgsql', 'php82Extensions.pdo_mysql', 'php82Extensions.pdo', 'php82Extensions.openssl', 'php82Extensions.mbstring', 'php82Extensions.curl']
+nixPkgs = ['php82', 'php82Packages.composer', 'nodejs_20']
 
 [phases.build]
 cmds = [
-    'composer install --no-dev --optimize-autoloader --no-interaction',
-    'php artisan view:clear',
-    'php artisan route:clear'
+    'composer install --no-dev --optimize-autoloader --no-interaction'
 ]
 
 [start]
