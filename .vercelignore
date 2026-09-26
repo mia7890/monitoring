@@ -1,6 +1,8 @@
 .git
 .github
 .env
+.env.*
+import.env
 /vendor
 /node_modules
 /tests

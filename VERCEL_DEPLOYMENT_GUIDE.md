@@ -66,6 +66,19 @@ Add the following environment variables in the Vercel project settings:
 | `CACHE_STORE` | `database` | Serverless safe |
 | `APP_STORAGE` | `/tmp/storage` | Required for Vercel |
 | `VIEW_COMPILED_PATH` | `/tmp/storage/framework/views` | Required for Vercel |
+| **Mail (Brevo HTTP API)** | | *(Recommended for Serverless)* |
+| `MAIL_MAILER` | `brevo` | Uses built-in HTTP API transport |
+| `BREVO_API_KEY` | `xkeysib-xxxxxxxxxxxxxxxx` | Your Brevo API Key |
+| `MAIL_FROM_ADDRESS` | `your-verified-sender@domain.com` | Verified Brevo sender email |
+| `MAIL_FROM_NAME` | `Monitoring System` | |
+| **Mail (Brevo SMTP Alternative)**| | |
+| `MAIL_MAILER` | `smtp` | |
+| `MAIL_HOST` | `smtp-relay.brevo.com` | |
+| `MAIL_PORT` | `587` | |
+| `MAIL_ENCRYPTION` | `tls` | |
+| `MAIL_USERNAME` | `your-brevo-login-email` | |
+| `MAIL_PASSWORD` | `your-brevo-smtp-key` | |
+| `MAIL_FROM_ADDRESS` | `your-verified-sender@domain.com` | |
 
 ---
 
