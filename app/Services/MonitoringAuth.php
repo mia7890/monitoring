@@ -78,7 +78,7 @@ class MonitoringAuth
     public static function adminEmails(): array
     {
         $raw = Setting::get('admin_email');
-        if (!is_string($raw) || trim($raw) === '' || str_contains($raw, 'sevilla.princeescort.ortega')) {
+        if (!is_string($raw) || trim($raw) === '') {
             $raw = config('monitoring.admin_email');
         }
 
@@ -90,7 +90,7 @@ class MonitoringAuth
         $emails = [];
         foreach ($parts as $part) {
             $cleaned = trim($part);
-            if (filter_var($cleaned, FILTER_VALIDATE_EMAIL) && !str_contains($cleaned, 'sevilla.princeescort.ortega')) {
+            if (filter_var($cleaned, FILTER_VALIDATE_EMAIL)) {
                 $emails[] = $cleaned;
             }
         }
